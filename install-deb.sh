@@ -40,6 +40,21 @@ sudo rm -rf /tmp/cookies.txt
 #install the DEB
 sudo apt install ./$FILE_NAME
 
+#Setup the DB
+#sudo /opt/tak/db-utils/takserver-setup-db.sh
+
+sudo systemctl daemon-reload
+
+
+#Create login credentials for local adminstrative access to the configuration interface:
+#sudo java -jar /opt/tak/utils/UserManager.jar usermod -A -p AtakAtak54321! admin
+
+#After creating certificates, restart TAK Server so that the newly created certificates can be loaded.
+#sudo systemctl restart takserver
+
+
+#start the service
+sudo systemctl start takserver
 
 echo "=================================================================="
 echo "=================================================================="
