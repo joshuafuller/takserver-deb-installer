@@ -1,5 +1,8 @@
 #!/bin/bash
 echo "Run this script to begin the install process for TAK Server using the .deb installer, it will take a while so please be patient."
+echo ""
+echo " *** WARNING - THIS SCRIPT IS FOR UBUNTU 20.04 *** "
+echo ""
 read -p "Press any key to begin ..."
 
 sudo apt-get update -y
