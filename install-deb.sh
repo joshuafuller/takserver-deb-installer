@@ -216,7 +216,7 @@ lines_to_remove=(
 # loop through the lines and remove them from the file
 for line in "${lines_to_remove[@]}"
 do
-    sed -i "\~$line~d" "$coreconfig_path"
+   sudo sed -i "\~$line~d" "$coreconfig_path"
 done
 
 
