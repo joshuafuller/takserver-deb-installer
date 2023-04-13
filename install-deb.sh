@@ -184,13 +184,13 @@ echo "Waiting 30 seconds for Tak Server to Load...."
 sleep 30
 
 #Create CA
-cd /opt/tak/certs && ./makeRootCa.sh --ca-name takserverCA
+cd /opt/tak/certs && ./makeRootCa.sh --ca-name takserver
 sleep 5
 #Create Server Cert
 cd /opt/tak/certs && ./makeCert.sh server takserver
 sleep 5
 #Create Client Cert for Admin
-#cd /opt/tak/certs && ./makeCert.sh client admin
+cd /opt/tak/certs && ./makeCert.sh client admin
 
 # Set permissions so user can write to certs/files
 sudo chown -R $USER:$USER /opt/tak/certs/
