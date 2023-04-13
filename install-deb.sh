@@ -59,7 +59,7 @@ EOF
 
 
 ## Set variables for generating CA and client certs
-echo "SSL setup. Hit enter (x3) to accept the defaults:\n"
+echo "SSL Configuration: Hit enter (x3) to accept the defaults:\n"
 read -p "State (for cert generation). Default [state] :" state
 read -p "City (for cert generation). Default [city]:" city
 read -p "Organizational Unit (for cert generation). Default [org]:" orgunit
