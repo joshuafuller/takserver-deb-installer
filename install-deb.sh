@@ -179,7 +179,7 @@ cd /opt/tak/certs && ./makeRootCa.sh --ca-name takserverCA
 cd /opt/tak/certs && ./makeCert.sh server takserver
 
 #Create Client Cert for Admin
-cd /opt/tak/certs && ./makeCert.sh client admin
+#cd /opt/tak/certs && ./makeCert.sh client admin
 
 # Set permissions so user can write to certs/files
 sudo chown -R $USER:$USER /opt/tak/certs/
