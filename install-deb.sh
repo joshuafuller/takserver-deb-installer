@@ -169,6 +169,9 @@ cd /opt/tak/certs && ./makeCert.sh server takserver
 #Create Client Cert for Admin
 cd /opt/tak/certs && ./makeCert.sh client admin
 
+# Set permissions so user can write to certs/files
+sudo useradd tak && chown -R tak:tak /opt/tak/certs/
+
 #Create login credentials for local adminstrative access to the configuration interface:
 sudo java -jar /opt/tak/utils/UserManager.jar usermod -A -p $adminpass admin
 
