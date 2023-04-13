@@ -91,29 +91,58 @@ chars='!@#%^*()_+abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 length=15
 
 # Generate a random pw for admin account
-adminpass=$(head /dev/urandom | tr -dc "$chars" | head -c "$length")
+has_upper=false
+has_lower=false
+has_digit=false
+has_special=false
 
-# Check if the random string contains a special character
-while true; do
+while [[ "$has_upper" != true || "$has_lower" != true || "$has_digit" != true || "$has_special" != true ]]; do
     adminpass=$(head /dev/urandom | tr -dc "$chars" | head -c "$length")
-    if [[ $adminpass =~ ^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{15,}$ ]]; then
-        break
-    fi
+    for (( i=0; i<${#adminpass}; i++ )); do
+        char="${adminpass:i:1}"
+        if [[ "$char" =~ [A-Z] ]]; then
+            has_upper=true
+        elif [[ "$char" =~ [a-z] ]]; then
+            has_lower=true
+        elif [[ "$char" =~ [0-9] ]]; then
+            has_digit=true
+        elif [[ "$char" =~ [!@#%^*()_+] ]]; then
+            has_special=true
+        fi
+    done
 done
+
+# Output the generated password
+echo "Generated admin password: $adminpass"
 
 # Generate a random pw for postgresql DB
-dbpass=$(head /dev/urandom | tr -dc "$chars" | head -c "$length")
+has_upper=false
+has_lower=false
+has_digit=false
+has_special=false
 
-# Check if the random string contains a special character
-while true; do
+while [[ "$has_upper" != true || "$has_lower" != true || "$has_digit" != true || "$has_special" != true ]]; do
     dbpass=$(head /dev/urandom | tr -dc "$chars" | head -c "$length")
-    if [[ $dbpass =~ ^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{15,}$ ]]; then
-        break
-    fi
+    for (( i=0; i<${#dbpass}; i++ )); do
+        char="${dbpass:i:1}"
+        if [[ "$char" =~ [A-Z] ]]; then
+            has_upper=true
+        elif [[ "$char" =~ [a-z] ]]; then
+            has_lower=true
+        elif [[ "$char" =~ [0-9] ]]; then
+            has_digit=true
+        elif [[ "$char" =~ [!@#%^*()_+] ]]; then
+            has_special=true
+        fi
+    done
 done
 
+# Output the generated password
+echo "Generated database password: $dbpass"
+
 #set the db password in CoreConfig
-sed -i "s/password=\".*\"/password=\"${dbpass}\"/" /opt/tak/CoreConfig.xml
+sudo sed -i "s/password=\".*\"/password=\"${dbpass}\"/" /opt/tak/CoreConfig.xml
+echo "update db password in CoreConfig.xml"
 
 # Replaces HOSTIP for rate limiter and Fed server. Database URL is a docker alias of tak-database
 #sed -i "s/HOSTIP/$IP/g" /opt/tak/CoreConfig.xml
@@ -156,7 +185,7 @@ echo "=================================================================="
 echo "=================================================================="
 echo "=================================================================="
 echo "******************************************************************"
-echo " Login at https://$IP:8443 with your admin account                "
+echo " Login at https://$IP:8080 with your admin account                "
 echo " Web portal user: admin                                           "
 echo " Web portal password: $adminpass                                  "
 echo " Postgresql DB password: $dbpass                                  "
