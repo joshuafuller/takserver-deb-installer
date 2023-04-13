@@ -11,8 +11,21 @@ IP=$(ip addr show $NIC | grep -m 1 "inet " | awk '{print $2}' | cut -d "/" -f1)
 
 
 #create tak user to run the service under
-adduser tak
-usermod -aG sudo tak
+takuser="tak"
+
+# Set variables for the new user
+password="tak"
+fullname="Tak User"
+
+# Create the new user
+sudo useradd -m -s /bin/bash -c "$fullname" "$takuser"
+
+# Set the password for the new user
+echo "$takuser:$password" | chpasswd
+
+#adduser $takuser
+usermod -aG sudo $takuser
+
 
 sudo apt-get update -y
 
