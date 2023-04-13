@@ -96,7 +96,7 @@ adminpass=$(head /dev/urandom | tr -dc "$chars" | head -c "$length")
 # Check if the random string contains a special character
 while true; do
     adminpass=$(head /dev/urandom | tr -dc "$chars" | head -c "$length")
-    if [[ $adminpass =~ ^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,}$ ]]; then
+    if [[ $adminpass =~ ^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{15,}$ ]]; then
         break
     fi
 done
@@ -107,7 +107,7 @@ dbpass=$(head /dev/urandom | tr -dc "$chars" | head -c "$length")
 # Check if the random string contains a special character
 while true; do
     dbpass=$(head /dev/urandom | tr -dc "$chars" | head -c "$length")
-    if [[ $dbpass =~ ^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,}$ ]]; then
+    if [[ $dbpass =~ ^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{15,}$ ]]; then
         break
     fi
 done
