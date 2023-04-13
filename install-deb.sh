@@ -9,9 +9,6 @@ read -p "Press any key to begin ..."
 adduser tak
 usermod -aG sudo tak
 
-#login as tak superuser
-su - tak
-
 sudo apt-get update -y
 
 #Install Deps
