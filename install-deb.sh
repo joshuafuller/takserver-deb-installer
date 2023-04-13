@@ -1,9 +1,20 @@
 #!/bin/bash
-echo "Run this script to begin the install process for TAK Server using the .deb installer, it will take a while so please be patient."
 echo ""
-echo " *** WARNING - THIS SCRIPT IS FOR UBUNTU 20.04 *** "
+echo ""
+echo "This script will install the necessary dependancies for TAK Server and complete the install using the .deb package"
+echo "!!!!!!!!!! This will take ~5min so please be patient !!!!!!!!!! "
+echo ""
 echo ""
 read -p "Press any key to begin ..."
+
+# Get the Ubuntu version number
+version=$(lsb_release -rs)
+
+# Check if the version is 20.04
+if [ "$version" != "20.04" ]; then
+  echo "Error: This script requires Ubuntu 20.04"
+  exit 1
+fi
 
 # Get important vals
 NIC=$(route | grep default | awk '{print $8}')
