@@ -138,14 +138,14 @@ while [[ "$has_upper" != true || "$has_lower" != true || "$has_digit" != true ||
 done
 
 # Output the generated password
-echo "Generated database password: $dbpass"
+#echo "Generated database password: $dbpass"
 
 #set the db password in CoreConfig
-sudo sed -i "s/password=\".*\"/password=\"${dbpass}\"/" /opt/tak/CoreConfig.xml
-echo "update db password in CoreConfig.xml"
+#sudo sed -i "s/password=\".*\"/password=\"${dbpass}\"/" /opt/tak/CoreConfig.xml
+#echo "update db password in CoreConfig.xml"
 
 # Replaces HOSTIP for rate limiter and Fed server. Database URL is a docker alias of tak-database
-#sed -i "s/HOSTIP/$IP/g" /opt/tak/CoreConfig.xml
+#sudo sed -i "s/HOSTIP/$IP/g" /opt/tak/CoreConfig.xml
 
 
 #Setup the DB
@@ -159,7 +159,7 @@ sudo systemctl start takserver
 echo "Waiting 30 seconds for Tak Server to Load...."
 sleep 30
 
-
+su - tak <<EOF
 #Create CA
 cd /opt/tak/certs && ./makeRootCa.sh --ca-name CRFtakserver
 
@@ -170,12 +170,13 @@ cd /opt/tak/certs && ./makeCert.sh server takserver
 cd /opt/tak/certs && ./makeCert.sh client admin
 
 # Set permissions so user can write to certs/files
-sudo useradd tak && chown -R tak:tak /opt/tak/certs/
+sudo chown -R tak:tak /opt/tak/certs/
 
 #Create login credentials for local adminstrative access to the configuration interface:
 sudo java -jar /opt/tak/utils/UserManager.jar usermod -A -p $adminpass admin
 
 sudo java -jar /opt/tak/utils/UserManager.jar certmod -A certs/files/admin.pem
+EOF
 
 #After creating certificates, restart TAK Server so that the newly created certificates can be loaded.
 sudo systemctl restart takserver
@@ -185,13 +186,14 @@ sudo systemctl restart takserver
 sudo systemctl enable takserver
 
 echo "=================================================================="
-echo "=================================================================="
+echo "=================== RESTARTING TAK SERVICE ======================="
+echo "============== GIVE A MIN BEFORE ACCESSING URL ==================="
 echo "=================================================================="
 echo "******************************************************************"
 echo " Login at http://$IP:8080 with your admin account                "
 echo " Web portal user: admin                                           "
 echo " Web portal password: $adminpass                                  "
-echo " Postgresql DB password: $dbpass                                  "
+#echo " Postgresql DB password: $dbpass                                  "
 echo "                                                                  "
 echo "******************************************************************"
 echo "=================================================================="
