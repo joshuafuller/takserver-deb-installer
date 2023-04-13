@@ -72,30 +72,30 @@ EOF
 
 
 ## Set variables for generating CA and client certs
-echo "SSL Configuration: Hit enter (x3) to accept the defaults:\n"
-read -p "State (for cert generation). Default [state] :" state
-read -p "City (for cert generation). Default [city]:" city
-read -p "Organizational Unit (for cert generation). Default [org]:" orgunit
-
-if [ -z "$state" ];
-then
-	state="state"
-fi
-
-if [ -z "$city" ];
-then
-	city="city"
-fi
-
-if [ -z "$orgunit" ];
-then
-	orgunit="org"
-fi
+#echo "SSL Configuration: Hit enter (x3) to accept the defaults:\n"
+#read -p "State (for cert generation). Default [state] :" state
+#read -p "City (for cert generation). Default [city]:" city
+#read -p "Organizational Unit (for cert generation). Default [org]:" orgunit
+#
+#if [ -z "$state" ];
+#then
+#	state="state"
+#fi
+#
+#if [ -z "$city" ];
+#then
+#	city="city"
+#fi
+#
+#if [ -z "$orgunit" ];
+#then
+#	orgunit="org"
+#fi
 
 # Update local env - makes these available when the next scripts run?
-export STATE=$state
-export CITY=$city
-export ORGANIZATIONAL_UNIT=$orgunit
+#export STATE=$state
+#export CITY=$city
+#export ORGANIZATIONAL_UNIT=$orgunit
 
 # Define the characters to include in the random string
 chars='!@#%^*()_+abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
