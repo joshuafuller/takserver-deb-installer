@@ -5,6 +5,8 @@ echo " *** WARNING - THIS SCRIPT IS FOR UBUNTU 20.04 *** "
 echo ""
 read -p "Press any key to begin ..."
 
+cd /tmp/
+
 #create tak user to run the service under
 adduser tak
 usermod -aG sudo tak
