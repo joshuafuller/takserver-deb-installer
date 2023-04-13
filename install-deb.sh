@@ -183,6 +183,12 @@ sudo systemctl start takserver
 echo "Waiting 30 seconds for Tak Server to Load...."
 sleep 30
 
+
+#Create login credentials for local adminstrative access to the configuration interface:
+sudo java -jar /opt/tak/utils/UserManager.jar usermod -A -p $adminpass admin
+sleep 5
+
+
 #Create CA
 cd /opt/tak/certs && ./makeRootCa.sh --ca-name takserver
 sleep 5
@@ -195,10 +201,6 @@ cd /opt/tak/certs && ./makeCert.sh client admin
 # Set permissions so user can write to certs/files
 sudo chown -R $USER:$USER /opt/tak/certs/
 sudo chown -R $USER:$USER /opt/tak/certs/files
-
-#Create login credentials for local adminstrative access to the configuration interface:
-
-sudo java -jar /opt/tak/utils/UserManager.jar usermod -A -p $adminpass admin
 
 sudo java -jar /opt/tak/utils/UserManager.jar certmod -A /opt/tak/certs/files/admin.pem
 
