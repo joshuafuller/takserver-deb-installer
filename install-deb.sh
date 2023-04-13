@@ -48,27 +48,32 @@ sudo rm -rf /tmp/cookies.txt
 sudo apt install ./$FILE_NAME
 
 #Setup the DB
-#sudo /opt/tak/db-utils/takserver-setup-db.sh
+sudo /opt/tak/db-utils/takserver-setup-db.sh
 
-#sudo systemctl daemon-reload
+sudo systemctl daemon-reload
 
+sudo systemctl start takserver
+
+#wait for 30seconds so takserver can launch
+echo "Waiting 30seconds for Takserver to Load...."
+sleep 30
 
 #Create login credentials for local adminstrative access to the configuration interface:
-#sudo java -jar /opt/tak/utils/UserManager.jar usermod -A -p AtakAtak54321! admin
+sudo java -jar /opt/tak/utils/UserManager.jar usermod -A -p AtakAtak54321! admin
 
 #After creating certificates, restart TAK Server so that the newly created certificates can be loaded.
-#sudo systemctl restart takserver
+sudo systemctl restart takserver
 
 
-#start the service
-#sudo systemctl start takserver
+#start the service at boot
+sudo systemctl enable takserver
 
 echo "=================================================================="
 echo "=================================================================="
 echo "=================================================================="
 echo "******************************************************************"
 echo "                                                                   "
-echo " DONE HOPEFULLY IT WORKED... MORE TO DO NEXT                       "
+echo " DONE HOPEFULLY IT WORKED...                "
 echo "                                                                   "
 echo "******************************************************************"
 echo "=================================================================="
