@@ -172,7 +172,6 @@ sudo systemctl start takserver
 echo "Waiting 30 seconds for Tak Server to Load...."
 sleep 30
 
-su - tak <<EOF
 #Create CA
 cd /opt/tak/certs && ./makeRootCa.sh --ca-name CRFtakserver
 
@@ -183,13 +182,14 @@ cd /opt/tak/certs && ./makeCert.sh server takserver
 cd /opt/tak/certs && ./makeCert.sh client admin
 
 # Set permissions so user can write to certs/files
-sudo chown -R tak:tak /opt/tak/certs/
+sudo chown -R $USER:$USER /opt/tak/certs/
 
 #Create login credentials for local adminstrative access to the configuration interface:
+
 sudo java -jar /opt/tak/utils/UserManager.jar usermod -A -p $adminpass admin
 
 sudo java -jar /opt/tak/utils/UserManager.jar certmod -A certs/files/admin.pem
-EOF
+
 
 #After creating certificates, restart TAK Server so that the newly created certificates can be loaded.
 sudo systemctl restart takserver
