@@ -202,6 +202,24 @@ sudo java -jar /opt/tak/utils/UserManager.jar usermod -A -p $adminpass admin
 
 sudo java -jar /opt/tak/utils/UserManager.jar certmod -A certs/files/admin.pem
 
+# Remove unsecure ports in core config
+coreconfig_path="/opt/tak/CoreConfig.xml"
+
+# define the lines to remove
+lines_to_remove=(
+    '<input auth="anonymous" _name="stdtcp" protocol="tcp" port="8087"/>'
+    '<input auth="anonymous" _name="stdudp" protocol="udp" port="8087"/>'
+    '<input auth="anonymous" _name="streamtcp" protocol="stcp" port="8088"/>'
+    '<connector port="8080" tls="false" _name="http_plaintext"/>'
+)
+
+# loop through the lines and remove them from the file
+for line in "${lines_to_remove[@]}"
+do
+    sudo sed -i "/$line/d" "$coreconfig_path"
+done
+
+
 
 #After creating certificates, restart TAK Server so that the newly created certificates can be loaded.
 sudo systemctl restart takserver
@@ -215,7 +233,7 @@ echo "=================== RESTARTING TAK SERVICE ======================="
 echo "============== GIVE A MIN BEFORE ACCESSING URL ==================="
 echo "=================================================================="
 echo "******************************************************************"
-echo " Login at http://$IP:8080 with your admin account                "
+echo " Login at http://$IP:8446 with your admin account                "
 echo " Web portal user: admin                                           "
 echo " Web portal password: $adminpass                                  "
 #echo " Postgresql DB password: $dbpass                                  "
