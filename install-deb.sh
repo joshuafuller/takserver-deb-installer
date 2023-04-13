@@ -5,6 +5,13 @@ echo " *** WARNING - THIS SCRIPT IS FOR UBUNTU 20.04 *** "
 echo ""
 read -p "Press any key to begin ..."
 
+#create tak user to run the service under
+adduser tak
+usermod -aG sudo tak
+
+#login as tak superuser
+su - tak
+
 sudo apt-get update -y
 
 #Install Deps
