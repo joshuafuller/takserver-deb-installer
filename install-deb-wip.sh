@@ -275,9 +275,6 @@ search='<tls keystore="JKS" keystoreFile="certs/files/takserver.jks" keystorePas
 replace='<tls keystore="JKS" keystoreFile="/opt/tak/certs/files/takserver.jks" keystorePass="atakatak" crlFile="/opt/tak/certs/files/intermediate-CA.crl" truststore="JKS" truststoreFile="/opt/tak/certs/files/truststore-intermediate-CA.jks" truststorePass="atakatak" context="TLSv1.2" keymanager="SunX509"/>'
 sed -i "s|$search|$replace|" $filename
 
-#remove the old 8446 config, the intermediate cert script added a new line for us
-sed -i '/<connector port="8446" clientAuth="false" _name="cert_https"\/>/d' /opt/tak/CoreConfig.xml
-
 search='<auth>'
 replace='<auth x509groups=\"true\" x509addAnonymous=\"false\">'
 sed -i "s@$search@$replace@g" $filename
