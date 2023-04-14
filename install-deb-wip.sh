@@ -278,6 +278,11 @@ sed -i "s|$search|$replace|" $filename
 #remove the old 8446 config, the intermediate cert script added a new line for us
 sed -i '/<connector port="8446" clientAuth="false" _name="cert_https"\/>/d' /opt/tak/CoreConfig.xml
 
+search='<auth>'
+replace='<auth x509groups=\"true\" x509addAnonymous=\"false\">'
+sed -i "s@$search@$replace@g" $filename
+
+
 #FQDN Setup
 read -p "Do you want to setup a FQDN? y or n " response
 if [[ $response =~ ^[Yy]$ ]]; then
@@ -319,6 +324,8 @@ sudo chown tak:tak -R /opt/tak/certs/letsencrypt
 sed -i '8d' /opt/tak/CoreConfig.xml
 #Add new Config line
 sed -i "6 a\        <connector port='8446' clientAuth='false' _name='cert_https' truststorePass='atakatak' truststoreFile='certs/files/truststore-intermediate-CA.jks' truststore='JKS' keystorePass='atakatak' keystoreFile='certs/letsencrypt/$HOSTNAME.jks' keystore='JKS'/>" /opt/tak/CoreConfig.xml
+
+
 else
   echo "skipping FQDN setup..."
 fi
