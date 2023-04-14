@@ -9,7 +9,7 @@ install scripts for .deb package of tak server
 ** WORK IN PROGRESS BUILD **
 - adds cert enrollment, FQDN setup
 
-``` cd /tmp/ && git clone https://github.com/atakhq/takserver-deb-installer.git && cd ./takserver-deb-installer && sudo chmod +x install-deb.sh && ./install-deb.sh```
+``` cd /tmp/ && git clone https://github.com/atakhq/takserver-deb-installer.git && cd ./takserver-deb-installer && sudo chmod +x install-deb-wip.sh && ./install-deb-wip.sh```
 
 ## First:
 - Download the .deb installer from tak.gov
