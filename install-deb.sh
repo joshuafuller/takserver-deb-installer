@@ -184,25 +184,48 @@ echo "Waiting 30 seconds for Tak Server to Load...."
 sleep 30
 
 
+
+while :
+do
+	sleep 10 
+	echo  "------------CERTIFICATE GENERATION--------------\n"
+	cd /opt/tak/certs && ./makeRootCa.sh --ca-name takserver
+	if [ $? -eq 0 ];
+	then
+		cd /opt/tak/certs && ./makeCert.sh server takserver
+		if [ $? -eq 0 ];
+		then
+			cd /opt/tak/certs && ./makeCert.sh client admin	
+			if [ $? -eq 0 ];
+			then
+				# Set permissions so user can write to certs/files
+				sudo chown -R $USER:$USER /opt/tak/certs/
+				break
+			else 
+				sleep 5
+			fi
+		else
+			sleep 5
+		fi
+	fi
+done
+
 #Create login credentials for local adminstrative access to the configuration interface:
-sudo java -jar /opt/tak/utils/UserManager.jar usermod -A -p $adminpass admin
-sleep 5
-
-
-#Create CA
-cd /opt/tak/certs && ./makeRootCa.sh --ca-name takserver
-sleep 5
-#Create Server Cert
-cd /opt/tak/certs && ./makeCert.sh server takserver
-sleep 5
-#Create Client Cert for Admin
-cd /opt/tak/certs && ./makeCert.sh client admin
-
-# Set permissions so user can write to certs/files
-sudo chown -R $USER:$USER /opt/tak/certs/
-sudo chown -R $USER:$USER /opt/tak/certs/files
-
-sudo java -jar /opt/tak/utils/UserManager.jar certmod -A /opt/tak/certs/files/admin.pem
+while :
+do
+	sleep 10
+	sudo java -jar /opt/tak/utils/UserManager.jar usermod -A -p $adminpass admin
+	if [ $? -eq 0 ];
+	then
+		sudo java -jar /opt/tak/utils/UserManager.jar certmod -A /opt/tak/certs/files/admin.pem
+		if [ $? -eq 0 ]; 
+		then
+			break
+		else
+			sleep 10
+		fi
+	fi
+done
 
 # Remove unsecure ports in core config
 coreconfig_path="/opt/tak/CoreConfig.xml"
