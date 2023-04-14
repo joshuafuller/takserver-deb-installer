@@ -5,6 +5,13 @@ install scripts for .deb package of tak server
 
 ``` cd /tmp/ && git clone https://github.com/atakhq/takserver-deb-installer.git && cd ./takserver-deb-installer && sudo chmod +x install-deb.sh && ./install-deb.sh```
 
+## First:
+- Download the .deb installer from tak.gov
+- Upload to Google Drive
+- Share the file, set share permissions to "anyone with the link"
+- Get the sharing link, you will need the file id during the script install
+
+## What the script does:
 
 - creates ubuntu user 'tak' with password 'tak' to install the service under
 - installs takserver and enables the service to run at startup on reboots
