@@ -264,7 +264,7 @@ sed -i "s@$search@$replace@g" $filename
 
 #Add new TLS Config
 search='<tls keystore="JKS" keystoreFile="certs/files/takserver.jks" keystorePass="atakatak" truststore="JKS" truststoreFile="certs/files/truststore-root.jks" truststorePass="atakatak" context="TLSv1.2" keymanager="SunX509"/>'
-replace='<tls keystore="JKS" keystoreFile="/opt/tak/certs/files/takserver.jks" keystorePass="atakatak" crlFile="/opt/tak/certs/files/intermediate-CA.crl" truststore="JKS" truststoreFile="/opt/tak/certs/files/truststore-intermediate-CA.jks" truststorePass="atakatak" context="TLSv1.2" keymanager="S>
+replace='<tls keystore="JKS" keystoreFile="/opt/tak/certs/files/takserver.jks" keystorePass="atakatak" crlFile="/opt/tak/certs/files/intermediate-CA.crl" truststore="JKS" truststoreFile="/opt/tak/certs/files/truststore-intermediate-CA.jks" truststorePass="atakatak" context="TLSv1.2" keymanager="SunX509"/>'
 sed -i "s|$search|$replace|" $filename
 
 
