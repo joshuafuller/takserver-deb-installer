@@ -275,7 +275,8 @@ search='<tls keystore="JKS" keystoreFile="certs/files/takserver.jks" keystorePas
 replace='<tls keystore="JKS" keystoreFile="/opt/tak/certs/files/takserver.jks" keystorePass="atakatak" crlFile="/opt/tak/certs/files/intermediate-CA.crl" truststore="JKS" truststoreFile="/opt/tak/certs/files/truststore-intermediate-CA.jks" truststorePass="atakatak" context="TLSv1.2" keymanager="SunX509"/>'
 sed -i "s|$search|$replace|" $filename
 
-
+#remove the old 8446 config, the intermediate cert script added a new line for us
+sed -i '/<connector port="8446" clientAuth="false" _name="cert_https"\/>/d' /opt/tak/CoreConfig.xml
 
 read -p "Do you want to setup a FQDN? \(y\/n\) " response
 
@@ -296,10 +297,10 @@ echo "You are about to start the letsencrypt cert generation process. "
 echo "When you are ready press any key to resume and follow instructions on screen to create your keys."
 read -p "Press any key to resume setup..."
 
-echo "What is your domain name? \(ex: atakhq.com \| tak-public.atakhq.com \)"
+echo "What is your domain name? (ex: atakhq.com | tak-public.atakhq.com )"
 read FQDN
 echo ""
-echo "What is your hostname? \(ex: atakhq-com \| tak-public-atakhq-com \)"
+echo "What is your hostname? (ex: atakhq-com | tak-public-atakhq-com )"
 echo "** Suggest using same value you entered for domain name but replace . with -"
 read HOSTNAME
 
@@ -307,14 +308,14 @@ read HOSTNAME
 sudo certbot certonly --standalone
 
 echo ""
-read -p "When prompted for password, use 'atakatak' \(Press any key to resume setup...\)"
+read -p "When prompted for password, use 'atakatak' (Press any key to resume setup...)"
 echo ""
 
 sudo openssl pkcs12 -export -in /etc/letsencrypt/live/$FQDN/fullchain.pem -inkey /etc/letsencrypt/live/$FQDN/privkey.pem -name $HOSTNAME -out ~/$HOSTNAME.p12
 
 sudo apt install openjdk-16-jre-headless -y
 echo ""
-read -p "If asked to save file becuase an existing copy exists, reply Y. \(Press any key to resume setup...\)"
+read -p "If asked to save file becuase an existing copy exists, reply Y. (Press any key to resume setup...)"
 echo ""
 sudo keytool -importkeystore -deststorepass atakatak -destkeystore ~/$HOSTNAME.jks -srckeystore ~/$HOSTNAME.p12 -srcstoretype PKCS12
 
