@@ -189,6 +189,8 @@ while :
 do
 	sleep 10 
 	echo  "------------CERTIFICATE GENERATION--------------\n"
+	echo " YOU ARE GOING TO SEE ERRORS FOR java.lang.reflect..... ignore it and let the script finish"
+	read -p "Press any key to continue..."
 	cd /opt/tak/certs && ./makeRootCa.sh --ca-name takserver
 	if [ $? -eq 0 ];
 	then
