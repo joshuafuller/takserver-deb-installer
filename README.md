@@ -4,11 +4,12 @@
 
 If you encounter this error: 
 
-```Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 23320 (unattended-upgr) ```
+```Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process XXXXXX (unattended-upgr) ```
 
-Open a new SSH terminal, and fire this command to remove the apt upgrade lock 
+Open a new SSH terminal, and fire this command to remove the apt upgrade lock - REPLACE XXXXXX with the process ID shown in the error
 
-```sudo kill -9 23320```
+```sudo kill -9 XXXXXX```
+
 
 ## First:
 - Download the .deb installer from tak.gov
