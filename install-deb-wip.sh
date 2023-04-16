@@ -44,11 +44,42 @@ sudo wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=dow
 sudo rm -rf /tmp/cookies.txt
 
 
+# Define the characters to include in the random string
+chars='!@#%^*()_+abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+
+# Get the length of the string to generate 
+length=6
+
+# Generate a random pw for admin account
+has_upper=false
+has_lower=false
+has_digit=false
+has_special=false
+
+while [[ "$has_upper" != true || "$has_lower" != true || "$has_digit" != true || "$has_special" != true ]]; do
+    takpass=$(head /dev/urandom | tr -dc "$chars" | head -c "$length")
+    for (( i=0; i<${#takpass}; i++ )); do
+        char="${takpass:i:1}"
+        if [[ "$char" =~ [A-Z] ]]; then
+            has_upper=true
+        elif [[ "$char" =~ [a-z] ]]; then
+            has_lower=true
+        elif [[ "$char" =~ [0-9] ]]; then
+            has_digit=true
+        elif [[ "$char" =~ [!@#%^*()_+] ]]; then
+            has_special=true
+        fi
+    done
+done
+
+# Output the generated password
+echo "Generated tak password: $takpass"
+
 #create tak user to run the service under
 takuser="tak"
 
 # Set variables for the new user
-password="tak"
+password=$takpass
 fullname="Tak User"
 
 # Create the new user
@@ -80,6 +111,7 @@ clear
 
 #login as tak user and install there
 echo "Logging in as tak user to install TakServer..."
+echo "Password is $takpass"
 su - tak <<EOF
 #install the DEB
 sudo apt install /tmp/takserver-deb-installer/$FILE_NAME
@@ -331,7 +363,7 @@ echo "******************************************************************"
 echo " Login at https://$IP:8446 with your admin account                "
 echo " Web portal user: admin                                           "
 echo " Web portal password: $adminpass                                  "
-echo ""
+echo " System User tak password: $takpass                               "
 echo "You should now be able to authenticate ITAK and ATAK clients using only user/password and server URL."
 echo ""
 echo "Server Address: $FQDN:8089 SSL"
@@ -349,7 +381,7 @@ echo "******************************************************************"
 echo " Login at https://$IP:8446 with your admin account                "
 echo " Web portal user: admin                                           "
 echo " Web portal password: $adminpass                                  "
-echo ""
+echo " System User tak password: $takpass                               "
 echo "******************************************************************"
 echo "=================================================================="
 echo "=================================================================="
