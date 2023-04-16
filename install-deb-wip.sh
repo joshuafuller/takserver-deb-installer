@@ -48,7 +48,7 @@ sudo rm -rf /tmp/cookies.txt
 chars='!@#%^*()_+abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 
 # Get the length of the string to generate 
-length=6
+length=15
 
 # Generate a random pw for admin account
 has_upper=false
