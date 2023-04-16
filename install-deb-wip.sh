@@ -306,7 +306,7 @@ sudo chown tak:tak -R /opt/tak/certs/letsencrypt
 
 #Add new Config line
 search='<connector port=\"8446\" clientAuth=\"false\" _name=\"cert_https\"/>'
-replace='<connector port=\"8446\" clientAuth=\"false\" _name=\"cert_https\" truststorePass=\"atakatak\" truststoreFile=\"certs/files/truststore-intermediate-CA.jks\" truststore=\"JKS\" keystorePass=\"atakatak\" keystoreFile=\"certs/letsencrypt/$HOSTNAME.jks\" keystore=\"JKS\"/>'
+replace='<connector port=\"8446\" clientAuth=\"false\" _name=\"cert_https\" truststorePass=\"atakatak\" truststoreFile=\"certs/files/truststore-intermediate-CA.jks\" truststore=\"JKS\" keystorePass=\"atakatak\" keystoreFile=\"certs/letsencrypt/'"$HOSTNAME"'.jks\" keystore=\"JKS\"/>'
 sed -i "s@$search@$replace@g" $filename
 
 
