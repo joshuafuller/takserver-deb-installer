@@ -24,6 +24,8 @@ Run install script for .deb package of tak server
 
 ``` cd /tmp/ && git clone https://github.com/atakhq/takserver-deb-installer.git && cd ./takserver-deb-installer && sudo chmod +x install-deb.sh && ./install-deb.sh```
 
+If you are setting up a FQDN for SSL, make sure you already have your DNS entry (A Record) setup to point your server IP to the domain name you want the server hosted at.
+
 ## What the script does:
 
 - creates ubuntu user 'tak' with random 15char password to install the service under
