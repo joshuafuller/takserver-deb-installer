@@ -302,7 +302,6 @@ sudo mkdir /opt/tak/certs/letsencrypt
 sudo cp ~/$HOSTNAME.jks /opt/tak/certs/letsencrypt
 sudo cp ~/$HOSTNAME.p12 /opt/tak/certs/letsencrypt
 sudo chown tak:tak -R /opt/tak/certs/letsencrypt
-############################################# MAKE THIS A SEARCH AND REPLACE
 
 #Add new Config line
 search='<connector port=\"8446\" clientAuth=\"false\" _name=\"cert_https\"/>'
