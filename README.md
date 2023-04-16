@@ -21,7 +21,7 @@ Run install script for .deb package of tak server
 - Link to admin login with random gen password when script is done
 
 
-** WORK IN PROGRESS BUILD **
+## ** WORK IN PROGRESS BUILD **
 - adds cert enrollment, FQDN setup
 
 ``` cd /tmp/ && git clone https://github.com/atakhq/takserver-deb-installer.git && cd ./takserver-deb-installer && sudo chmod +x install-deb-wip.sh && ./install-deb-wip.sh```
