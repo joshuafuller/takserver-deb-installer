@@ -60,7 +60,6 @@ echo "$takuser:$password" | chpasswd
 #adduser $takuser
 usermod -aG sudo $takuser
 
-
 sudo apt-get update -y
 
 #Install Deps
@@ -77,19 +76,22 @@ echo deb [arch=amd64,arm64,ppc64el signed-by=/usr/share/keyrings/postgresql.gpg]
 sudo apt-get update
 sudo apt install postgresql-client-15 postgresql-15 postgresql-15-postgis-3 -y
 
+clear
 
 #login as tak user and install there
+echo "Logging in as tak user to install TakServer..."
 su - tak <<EOF
 #install the DEB
 sudo apt install /tmp/takserver-deb-installer/$FILE_NAME
 EOF
 
+clear
 
 #Need to build CoreConfig.xml and put it into /opt/tak/CoreConfig.xml so next script uses it
 
 
 # Set variables for generating CA and client certs
-echo "SSL Configuration: Hit enter (x3) to accept the defaults:\n"
+echo "SSL Configuration: Hit enter (x3) to accept the defaults:"
 read -p "State (for cert generation). Default [state] :" state
 read -p "City (for cert generation). Default [city]:" city
 read -p "Organizational Unit (for cert generation). Default [org]:" orgunit
@@ -145,39 +147,6 @@ done
 # Output the generated password
 echo "Generated admin password: $adminpass"
 
-# Generate a random pw for postgresql DB
-has_upper=false
-has_lower=false
-has_digit=false
-has_special=false
-
-while [[ "$has_upper" != true || "$has_lower" != true || "$has_digit" != true || "$has_special" != true ]]; do
-    dbpass=$(head /dev/urandom | tr -dc "$chars" | head -c "$length")
-    for (( i=0; i<${#dbpass}; i++ )); do
-        char="${dbpass:i:1}"
-        if [[ "$char" =~ [A-Z] ]]; then
-            has_upper=true
-        elif [[ "$char" =~ [a-z] ]]; then
-            has_lower=true
-        elif [[ "$char" =~ [0-9] ]]; then
-            has_digit=true
-        elif [[ "$char" =~ [!@#%^*()_+] ]]; then
-            has_special=true
-        fi
-    done
-done
-
-# Output the generated password
-#echo "Generated database password: $dbpass"
-
-#set the db password in CoreConfig
-#sudo sed -i "s/password=\".*\"/password=\"${dbpass}\"/" /opt/tak/CoreConfig.xml
-#echo "update db password in CoreConfig.xml"
-
-# Replaces HOSTIP for rate limiter and Fed server. Database URL is a docker alias of tak-database
-#sudo sed -i "s/HOSTIP/$IP/g" /opt/tak/CoreConfig.xml
-
-
 #Setup the DB
 sudo /opt/tak/db-utils/takserver-setup-db.sh
 
@@ -195,7 +164,7 @@ while :
 do
 	sleep 10 
 	echo  "------------CERTIFICATE GENERATION--------------\n"
-	echo " YOU ARE GOING TO SEE ERRORS FOR java.lang.reflect..... ignore it and let the script finish"
+	echo " YOU ARE LIKELY GOING TO SEE ERRORS FOR java.lang.reflect..... ignore it and let the script finish it will keep retrying until successful"
 	read -p "Press any key to continue..."
 	cd /opt/tak/certs && ./makeRootCa.sh --ca-name takserver
 	if [ $? -eq 0 ];
@@ -288,20 +257,33 @@ read -p "Press any key to being setup..."
 #install certbot 
 sudo snap install --classic certbot
 sudo ln -s /snap/bin/certbot /usr/bin/certbot
-#open ports for letsencrypt to do its thing
-sudo ufw allow 80/tcp
-sudo ufw reload
 echo "You are about to start the letsencrypt cert generation process. "
 echo "When you are ready press any key to resume and follow instructions on screen to create your keys."
 read -p "Press any key to resume setup..."
 echo "What is your domain name? ex: atakhq.com or tak-public.atakhq.com "
 read FQDN
+DOMAIN=$FQDN
 echo ""
 echo "What is your hostname? ex: atakhq-com or tak-public-atakhq-com "
 echo "** Suggest using same value you entered for domain name but replace . with -"
 read HOSTNAME
 #request inital cert
-sudo certbot certonly --standalone
+
+echo "What is your email?"
+read EMAIL="user@example.com"
+
+if certbot certonly --standalone -d $DOMAIN -m $EMAIL --agree-tos --non-interactive ; then
+  echo "Certificate obtained successfully!"
+else
+  if [[ $(certbot certificates) =~ "Too many certificates already issued" ]]; then
+    echo "Renewing existing certificate..."
+    CERT_NAME=$(certbot certificates | grep -oP "(?<=Certificate Name: ).*")
+    certbot certonly --standalone -d $DOMAIN -m $EMAIL --agree-tos --cert-name $CERT_NAME
+  else
+    echo "Error obtaining certificate: $(certbot certificates)"
+    exit 1
+  fi
+fi
 echo ""
 read -p "When prompted for password, use 'atakatak' Press any key to resume setup..."
 echo ""
@@ -317,8 +299,9 @@ sudo mkdir /opt/tak/certs/letsencrypt
 sudo cp ~/$HOSTNAME.jks /opt/tak/certs/letsencrypt
 sudo cp ~/$HOSTNAME.p12 /opt/tak/certs/letsencrypt
 sudo chown tak:tak -R /opt/tak/certs/letsencrypt
+############################################# MAKE THIS A SEARCH AND REPLACE
 #Remove old config line
-sed -i '8d' /opt/tak/CoreConfig.xml
+#sed -i '8d' /opt/tak/CoreConfig.xml
 #Add new Config line
 sed -i "6 a\        <connector port='8446' clientAuth='false' _name='cert_https' truststorePass='atakatak' truststoreFile='certs/files/truststore-intermediate-CA.jks' truststore='JKS' keystorePass='atakatak' keystoreFile='certs/letsencrypt/$HOSTNAME.jks' keystore='JKS'/>" /opt/tak/CoreConfig.xml
 
@@ -326,6 +309,7 @@ sed -i "6 a\        <connector port='8446' clientAuth='false' _name='cert_https'
 else
   echo "skipping FQDN setup..."
 fi
+echo "******** RESTARTING TAKSERVER FOR CHANGES TO APPLY ***************"
 #After creating certificates, restart TAK Server so that the newly created certificates can be loaded.
 sudo systemctl restart takserver
 #start the service at boot
@@ -339,7 +323,6 @@ echo "******************************************************************"
 echo " Login at https://$IP:8446 with your admin account                "
 echo " Web portal user: admin                                           "
 echo " Web portal password: $adminpass                                  "
-#echo " Postgresql DB password: $dbpass                                  "
 echo ""
 echo "You should now be able to authenticate ITAK and ATAK clients using only user/password and server URL."
 echo ""
@@ -358,12 +341,10 @@ echo "******************************************************************"
 echo " Login at https://$IP:8446 with your admin account                "
 echo " Web portal user: admin                                           "
 echo " Web portal password: $adminpass                                  "
-#echo " Postgresql DB password: $dbpass                                  "
 echo ""
 echo "******************************************************************"
 echo "=================================================================="
 echo "=================================================================="
-fi
 echo "***************************************************"
 echo "Run the following command on your LOCAL machine to download the common cert"
 echo ""
@@ -375,3 +356,5 @@ echo ""
 echo "scp tak@111.222.333.444:/opt/tak/certs/files/truststore-intermediate-CA.p12 ~/Downloads"
 echo ""
 echo "***************************************************"
+fi
+
