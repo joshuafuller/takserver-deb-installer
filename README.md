@@ -1,11 +1,4 @@
 # takserver-deb-installer
-install scripts for .deb package of tak server
-
-** WORKING BUILD **
-
-``` cd /tmp/ && git clone https://github.com/atakhq/takserver-deb-installer.git && cd ./takserver-deb-installer && sudo chmod +x install-deb.sh && ./install-deb.sh```
-
-
 ** WORK IN PROGRESS BUILD **
 - adds cert enrollment, FQDN setup
 
@@ -18,6 +11,11 @@ install scripts for .deb package of tak server
 - Get the sharing link, you will need the file id during the script install
 
 ```https://drive.google.com/file/d/<FILE ID STRING HERE>/view?usp=sharing```
+
+## Second:
+Run install script for .deb package of tak server
+
+``` cd /tmp/ && git clone https://github.com/atakhq/takserver-deb-installer.git && cd ./takserver-deb-installer && sudo chmod +x install-deb.sh && ./install-deb.sh```
 
 ## What the script does:
 
