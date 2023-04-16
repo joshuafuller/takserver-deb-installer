@@ -3,9 +3,11 @@
 ## Notes:
 
 If you encounter this error: 
+
 ```Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 23320 (unattended-upgr) ```
 
 Open a new SSH terminal, and fire this command to remove the apt upgrade lock 
+
 ```sudo kill -9 23320```
 
 ## First:
