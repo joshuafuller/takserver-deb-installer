@@ -270,7 +270,7 @@ read HOSTNAME
 #request inital cert
 
 echo "What is your email?"
-read EMAIL="user@example.com"
+read EMAIL
 
 if certbot certonly --standalone -d $DOMAIN -m $EMAIL --agree-tos --non-interactive ; then
   echo "Certificate obtained successfully!"
