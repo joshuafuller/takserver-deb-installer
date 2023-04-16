@@ -38,3 +38,4 @@ Run install script for .deb package of tak server
 
 ## To Do:
 - UFW
+- ITAK QR Codes
