@@ -309,16 +309,14 @@ search='<connector port=\"8446\" clientAuth=\"false\" _name=\"cert_https\"/>'
 replace='<connector port=\"8446\" clientAuth=\"false\" _name=\"cert_https\" truststorePass=\"atakatak\" truststoreFile=\"certs/files/truststore-intermediate-CA.jks\" truststore=\"JKS\" keystorePass=\"atakatak\" keystoreFile=\"certs/letsencrypt/'"$HOSTNAME"'.jks\" keystore=\"JKS\"/>'
 sed -i "s@$search@$replace@g" $filename
 
-
-
-
+echo "Making sure correct java version is set, since we had to install 16 to run this"
+sudo update-alternatives --set java /usr/lib/jvm/java-11-openjdk-amd64/bin/java
 
 else
   echo "skipping FQDN setup..."
 fi
 
-echo "Making sure correct java version is set"
-sudo update-alternatives --set java /usr/lib/jvm/java-11-openjdk-amd64/bin/java
+
 
 echo "******** RESTARTING TAKSERVER FOR CHANGES TO APPLY ***************"
 #After creating certificates, restart TAK Server so that the newly created certificates can be loaded.
