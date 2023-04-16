@@ -16,6 +16,7 @@ install scripts for .deb package of tak server
 - Upload to Google Drive
 - Share the file, set share permissions to "anyone with the link"
 - Get the sharing link, you will need the file id during the script install
+
 ```https://drive.google.com/file/d/<FILE ID STRING HERE>/view?usp=sharing```
 
 ## What the script does:
