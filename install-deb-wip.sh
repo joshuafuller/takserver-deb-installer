@@ -247,7 +247,7 @@ sed -i "s|$search|$replace|" $filename
 search='<auth>'
 replace='<auth x509groups=\"true\" x509addAnonymous=\"false\">'
 sed -i "s@$search@$replace@g" $filename
-
+clear
 
 #FQDN Setup
 read -p "Do you want to setup a FQDN? y or n " response
