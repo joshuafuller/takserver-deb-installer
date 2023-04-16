@@ -36,3 +36,5 @@ Run install script for .deb package of tak server
 - Optional: Configure FQDN for seamless cert enrollment and no SSL warnings in browser
 - Link to admin login with random gen password when script is done
 
+## To Do:
+- UFW
