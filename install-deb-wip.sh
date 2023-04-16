@@ -269,21 +269,29 @@ echo "** Suggest using same value you entered for domain name but replace . with
 read HOSTNAME
 #request inital cert
 
-echo "What is your email?"
-read EMAIL
-
-if certbot certonly --standalone -d $DOMAIN -m $EMAIL --agree-tos --non-interactive ; then
-  echo "Certificate obtained successfully!"
+# Check for existing certificates
+EXISTING_CERTS=$(sudo certbot certificates)
+if [[ $EXISTING_CERTS =~ "Certificate Name: $DOMAIN" ]]; then
+  echo "Certificate found for $DOMAIN"
+  CERT_NAME=$(echo "$EXISTING_CERTS" | grep -oP "(?<=Certificate Name: ).*" | head -1)
+  echo "Using existing certificate: $CERT_NAME"
 else
-  if [[ $(certbot certificates) =~ "Too many certificates already issued" ]]; then
-    echo "Renewing existing certificate..."
-    CERT_NAME=$(certbot certificates | grep -oP "(?<=Certificate Name: ).*")
-    certbot certonly --standalone -d $DOMAIN -m $EMAIL --agree-tos --cert-name $CERT_NAME
+  echo "No existing certificates found for $DOMAIN"
+  echo "Requesting a new certificate..."
+  # Request a new certificate
+  echo "What is your email?"
+  read EMAIL
+
+  if certbot certonly --standalone -d $DOMAIN -m $EMAIL --agree-tos --non-interactive ; then
+    echo "Certificate obtained successfully!"
+    CERT_NAME=$(sudo certbot certificates | grep -oP "(?<=Certificate Name: ).*")
   else
-    echo "Error obtaining certificate: $(certbot certificates)"
+    echo "Error obtaining certificate: $(sudo certbot certificates)"
     exit 1
   fi
 fi
+
+
 echo ""
 read -p "When prompted for password, use 'atakatak' Press any key to resume setup..."
 echo ""
