@@ -158,7 +158,7 @@ sudo systemctl start takserver
 echo "Waiting 30 seconds for Tak Server to Load...."
 sleep 30
 
-
+clear
 
 while :
 do
@@ -221,8 +221,11 @@ do
    sudo sed -i "\~$line~d" "$coreconfig_path"
 done
 
+clear
+
 echo "Setting up Certificate Enrollment so you can assign user/pass for login."
-#read -p "Press any key to being setup..."
+echo "When asked to move files around, reply Yes"
+read -p "Press any key to being setup..."
 
 #Make the int cert and edit the tak config to use it
 echo "Generating Intermediate Cert"
@@ -252,14 +255,9 @@ sed -i "s@$search@$replace@g" $filename
 #FQDN Setup
 read -p "Do you want to setup a FQDN? y or n " response
 if [[ $response =~ ^[Yy]$ ]]; then
-echo "TAK Server SSL Certbot Helper Script"
-read -p "Press any key to being setup..."
 #install certbot 
 sudo snap install --classic certbot
 sudo ln -s /snap/bin/certbot /usr/bin/certbot
-echo "You are about to start the letsencrypt cert generation process. "
-echo "When you are ready press any key to resume and follow instructions on screen to create your keys."
-read -p "Press any key to resume setup..."
 echo "What is your domain name? ex: atakhq.com or tak-public.atakhq.com "
 read FQDN
 DOMAIN=$FQDN
