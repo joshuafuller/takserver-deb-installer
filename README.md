@@ -26,13 +26,10 @@ Run install script for .deb package of tak server
 
 ## What the script does:
 
-- creates ubuntu user 'tak' with password 'tak' to install the service under
+- creates ubuntu user 'tak' with random 15char password to install the service under
 - installs takserver and enables the service to run at startup on reboots
-- disables insecure ports
+- disables insecure ports in CoreConfig.xml
+- configures certificate enrollment
+- Optional: Configure FQDN for seamless cert enrollment and no SSL warnings in browser
 - Link to admin login with random gen password when script is done
 
-
-## ** WORK IN PROGRESS BUILD **
-- adds cert enrollment, FQDN setup
-
-``` cd /tmp/ && git clone https://github.com/atakhq/takserver-deb-installer.git && cd ./takserver-deb-installer && sudo chmod +x install-deb-wip.sh && ./install-deb-wip.sh```
