@@ -83,13 +83,10 @@ echo "Logging in as tak user to install TakServer..."
 su - tak <<EOF
 #install the DEB
 sudo apt install /tmp/takserver-deb-installer/$FILE_NAME
+clear
 EOF
 
-clear
-
 #Need to build CoreConfig.xml and put it into /opt/tak/CoreConfig.xml so next script uses it
-
-
 # Set variables for generating CA and client certs
 echo "SSL Configuration: Hit enter (x3) to accept the defaults:"
 read -p "State (for cert generation). Default [state] :" state
