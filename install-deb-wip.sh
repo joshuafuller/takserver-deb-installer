@@ -300,10 +300,14 @@ sudo cp ~/$HOSTNAME.jks /opt/tak/certs/letsencrypt
 sudo cp ~/$HOSTNAME.p12 /opt/tak/certs/letsencrypt
 sudo chown tak:tak -R /opt/tak/certs/letsencrypt
 ############################################# MAKE THIS A SEARCH AND REPLACE
-#Remove old config line
-#sed -i '8d' /opt/tak/CoreConfig.xml
+
 #Add new Config line
-sed -i "6 a\        <connector port='8446' clientAuth='false' _name='cert_https' truststorePass='atakatak' truststoreFile='certs/files/truststore-intermediate-CA.jks' truststore='JKS' keystorePass='atakatak' keystoreFile='certs/letsencrypt/$HOSTNAME.jks' keystore='JKS'/>" /opt/tak/CoreConfig.xml
+search='<connector port=\"8446\" clientAuth=\"false\" _name=\"cert_https\"/>'
+replace='<connector port=\"8446\" clientAuth=\"false\" _name=\"cert_https\" truststorePass=\"atakatak\" truststoreFile=\"certs/files/truststore-intermediate-CA.jks\" truststore=\"JKS\" keystorePass=\"atakatak\" keystoreFile=\"certs/letsencrypt/$HOSTNAME.jks\" keystore=\"JKS\"/>'
+sed -i "s@$search@$replace@g" $filename
+
+
+
 
 
 else
