@@ -1,8 +1,4 @@
 # takserver-deb-installer
-** WORK IN PROGRESS BUILD **
-- adds cert enrollment, FQDN setup
-
-``` cd /tmp/ && git clone https://github.com/atakhq/takserver-deb-installer.git && cd ./takserver-deb-installer && sudo chmod +x install-deb-wip.sh && ./install-deb-wip.sh```
 
 ## First:
 - Download the .deb installer from tak.gov
@@ -23,3 +19,9 @@ Run install script for .deb package of tak server
 - installs takserver and enables the service to run at startup on reboots
 - disables insecure ports
 - Link to admin login with random gen password when script is done
+
+
+** WORK IN PROGRESS BUILD **
+- adds cert enrollment, FQDN setup
+
+``` cd /tmp/ && git clone https://github.com/atakhq/takserver-deb-installer.git && cd ./takserver-deb-installer && sudo chmod +x install-deb-wip.sh && ./install-deb-wip.sh```
