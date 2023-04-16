@@ -268,7 +268,7 @@ sed -i '3 a\        <input _name="cassl" auth="x509" protocol="tls" port="8089" 
 filename="/opt/tak/CoreConfig.xml"
 
 search="<dissemination smartRetry=\"false\"/>"
-replace="${search}\n    <certificateSigning CA=\"TAKServer\">\n        <certificateConfig>\n            <nameEntries>\n                <nameEntry name=\"O\" value=\"TAK\"/>\n                <nameEntry name=\"OU\" value=\"TAK\"/>\n            </nameEntries>\n        </certificateConfig>\n        <TAKServerCAConfig keystore=\"JKS\" keystoreFile=\"/opt/tak/certs/files/takserver.jks\" keystorePass=\"atakatak\" validityDays=\"30\" signatureAlg=\"SHA256WithRSA\"/>\n    </certificateSigning>"
+replace="${search}\n    <certificateSigning CA=\"TAKServer\">\n        <certificateConfig>\n            <nameEntries>\n                <nameEntry name=\"O\" value=\"TAK\"/>\n                <nameEntry name=\"OU\" value=\"TAK\"/>\n            </nameEntries>\n        </certificateConfig>\n        <TAKServerCAConfig keystore=\"JKS\" keystoreFile=\"/opt/tak/certs/files/intermediate-CA-signing.jks\" keystorePass=\"atakatak\" validityDays=\"30\" signatureAlg=\"SHA256WithRSA\"/>\n    </certificateSigning>"
 sed -i "s@$search@$replace@g" $filename
 
 #Add new TLS Config
