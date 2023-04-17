@@ -39,3 +39,4 @@ Run install script for .deb package of tak server
 ## To Do:
 - UFW
 - ITAK QR Codes
+- move admin cert creation after intermediate CA setup so key is properly signed
