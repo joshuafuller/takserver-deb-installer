@@ -191,8 +191,7 @@ clear
 
 while :
 do
-	sleep 10 
-	echo  "------------CERTIFICATE GENERATION--------------\n"
+	echo  "------------CA AND SERVER CERTIFICATE GENERATION--------------\n"
 	echo " YOU ARE LIKELY GOING TO SEE ERRORS FOR java.lang.reflect..... ignore it and let the script finish it will keep retrying until successful"
 	read -p "Press any key to continue..."
 	cd /opt/tak/certs && ./makeRootCa.sh --ca-name takserver
@@ -201,37 +200,14 @@ do
 		cd /opt/tak/certs && ./makeCert.sh server takserver
 		if [ $? -eq 0 ];
 		then
-			cd /opt/tak/certs && ./makeCert.sh client admin	
-			if [ $? -eq 0 ];
-			then
-				# Set permissions so user can write to certs/files
-				sudo chown -R $USER:$USER /opt/tak/certs/
-				break
-			else 
-				sleep 5
-			fi
+			break
 		else
 			sleep 5
 		fi
 	fi
 done
 
-#Create login credentials for local adminstrative access to the configuration interface:
-while :
-do
-	sleep 10
-	sudo java -jar /opt/tak/utils/UserManager.jar usermod -A -p $adminpass admin
-	if [ $? -eq 0 ];
-	then
-		sudo java -jar /opt/tak/utils/UserManager.jar certmod -A /opt/tak/certs/files/admin.pem
-		if [ $? -eq 0 ]; 
-		then
-			break
-		else
-			sleep 10
-		fi
-	fi
-done
+
 
 # Remove unsecure ports in core config
 coreconfig_path="/opt/tak/CoreConfig.xml"
@@ -280,6 +256,38 @@ search='<auth>'
 replace='<auth x509groups=\"true\" x509addAnonymous=\"false\">'
 sed -i "s@$search@$replace@g" $filename
 clear
+
+
+while :
+do
+	echo  "------------ADMIN CERTIFICATE GENERATION--------------"
+	cd /opt/tak/certs && ./makeCert.sh client admin
+	if [ $? -eq 0 ];
+	then
+		break
+	else
+		sleep 5
+	fi
+done
+
+#Create login credentials for local adminstrative access to the configuration interface:
+while :
+do
+	sleep 10
+	echo  "------------ADMIN WEB CERTIFICATE GENERATION--------------"
+	sudo java -jar /opt/tak/utils/UserManager.jar usermod -A -p $adminpass admin
+	if [ $? -eq 0 ];
+	then
+		sudo java -jar /opt/tak/utils/UserManager.jar certmod -A /opt/tak/certs/files/admin.pem
+		if [ $? -eq 0 ]; 
+		then
+			break
+		else
+			sleep 10
+		fi
+	fi
+done
+
 
 #FQDN Setup
 read -p "Do you want to setup a FQDN? y or n " response
