@@ -191,9 +191,7 @@ clear
 
 while :
 do
-	echo  "------------CA AND SERVER CERTIFICATE GENERATION--------------\n"
-	echo " YOU ARE LIKELY GOING TO SEE ERRORS FOR java.lang.reflect..... ignore it and let the script finish it will keep retrying until successful"
-	read -p "Press any key to continue..."
+	echo  "------------CA AND SERVER CERTIFICATE GENERATION--------------"
 	cd /opt/tak/certs && ./makeRootCa.sh --ca-name takserver
 	if [ $? -eq 0 ];
 	then
@@ -208,24 +206,6 @@ do
 done
 
 
-
-# Remove unsecure ports in core config
-coreconfig_path="/opt/tak/CoreConfig.xml"
-
-# define the lines to remove
-lines_to_remove=(
-    '<input auth="anonymous" _name="stdtcp" protocol="tcp" port="8087"/>'
-    '<input auth="anonymous" _name="stdudp" protocol="udp" port="8087"/>'
-    '<input auth="anonymous" _name="streamtcp" protocol="stcp" port="8088"/>'
-    '<connector port="8080" tls="false" _name="http_plaintext"/>'
-)
-
-# loop through the lines and remove them from the file
-for line in "${lines_to_remove[@]}"
-do
-   sudo sed -i "\~$line~d" "$coreconfig_path"
-done
-
 clear
 
 echo "Setting up Certificate Enrollment so you can assign user/pass for login."
@@ -233,8 +213,18 @@ echo "When asked to move files around, reply Yes"
 read -p "Press any key to being setup..."
 
 #Make the int cert and edit the tak config to use it
-echo "Generating Intermediate Cert"
-cd /opt/tak/certs/ && ./makeCert.sh ca intermediate-CA
+while :
+do
+	echo  "------------INTERMEDIATE CERTIFICATE GENERATION--------------"
+	cd /opt/tak/certs && ./makeCert.sh client admin
+	if [ $? -eq 0 ];
+	then
+		break
+	else
+		sleep 5
+	fi
+done
+
 
 #Add new conx type
 sed -i '3 a\        <input _name="cassl" auth="x509" protocol="tls" port="8089" />' /opt/tak/CoreConfig.xml
@@ -255,8 +245,23 @@ sed -i "s|$search|$replace|" $filename
 search='<auth>'
 replace='<auth x509groups=\"true\" x509addAnonymous=\"false\">'
 sed -i "s@$search@$replace@g" $filename
+
 clear
 
+# Remove unsecure ports in core config
+# define the lines to remove
+lines_to_remove=(
+    '<input auth="anonymous" _name="stdtcp" protocol="tcp" port="8087"/>'
+    '<input auth="anonymous" _name="stdudp" protocol="udp" port="8087"/>'
+    '<input auth="anonymous" _name="streamtcp" protocol="stcp" port="8088"/>'
+    '<connector port="8080" tls="false" _name="http_plaintext"/>'
+)
+
+# loop through the lines and remove them from the file
+for line in "${lines_to_remove[@]}"
+do
+   sudo sed -i "\~$line~d" "$filename"
+done
 
 while :
 do
