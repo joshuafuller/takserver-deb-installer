@@ -112,7 +112,7 @@ clear
 #login as tak user and install there
 echo "Logging in as tak user to install TakServer..."
 echo "Password is $takpass"
-sudo -u tak bash << EOF
+su - tak <<EOF
 #install the DEB
 sudo apt install /tmp/takserver-deb-installer/$FILE_NAME
 clear
