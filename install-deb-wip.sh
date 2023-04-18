@@ -191,7 +191,7 @@ clear
 
 while :
 do
-	echo  "------------CA AND SERVER CERTIFICATE GENERATION--------------"
+	echo  "------------ROOT CA AND SERVER CERTIFICATE GENERATION--------------"
 	cd /opt/tak/certs && ./makeRootCa.sh --ca-name takserver
 	if [ $? -eq 0 ];
 	then
@@ -216,7 +216,7 @@ read -p "Press any key to being setup..."
 while :
 do
 	echo  "------------INTERMEDIATE CERTIFICATE GENERATION--------------"
-	cd /opt/tak/certs && ./makeCert.sh client admin
+	cd /opt/tak/certs/ && ./makeCert.sh ca intermediate-CA
 	if [ $? -eq 0 ];
 	then
 		break
