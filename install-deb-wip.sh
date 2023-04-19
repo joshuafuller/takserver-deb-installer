@@ -110,7 +110,7 @@ sudo apt install postgresql-client-15 postgresql-15 postgresql-15-postgis-3 -y
 clear
 
 #FQDN Setup
-read -p "Do you want to install and configure simple-rtsp-server? y or n \n" response
+read -p "Do you want to install and configure simple-rtsp-server? y or n " response
 if [[ $response =~ ^[Yy]$ ]]; then
 
 echo "Installing simple-rtsp-server - for use with TAK Server"
@@ -360,6 +360,8 @@ DEVICE_NAME=$(ip -o -4 route show to default | awk '{print $5}')
 PUB_SERVER_IP=$(ip addr show $DEVICE_NAME | awk 'NR==3{print substr($2,1,(length($2)-3))}')
 
 HAS_SIMPLERTSP=1
+
+clear
 
 else
   echo "skipping simple-rtsp-server setup..."
