@@ -203,45 +203,7 @@ sleep 30
 
 clear
 
-echo "Setting up Certificate Enrollment so you can assign user/pass for login."
-echo "When asked to move files around, reply Yes"
-read -p "Press any key to being setup..."
 
-#Make the int cert and edit the tak config to use it
-echo "Generating Intermediate Cert"
-while :
-do
-	cd /opt/tak/certs/ && ./makeCert.sh ca intermediate-CA
-	if [ $? -eq 0 ];
-	then
-		break
-	else 
-		echo "Retry in 5 sec..."
-		sleep 5
-	fi
-done
-
-
-#Add new conx type
-sed -i '3 a\        <input _name="cassl" auth="x509" protocol="tls" port="8089" />' /opt/tak/CoreConfig.xml
-
-#Replace CA Config
-# Set the filename
-filename="/opt/tak/CoreConfig.xml"
-
-search="<dissemination smartRetry=\"false\"/>"
-replace="${search}\n    <certificateSigning CA=\"TAKServer\">\n        <certificateConfig>\n            <nameEntries>\n                <nameEntry name=\"O\" value=\"TAK\"/>\n                <nameEntry name=\"OU\" value=\"TAK\"/>\n            </nameEntries>\n        </certificateConfig>\n        <TAKServerCAConfig keystore=\"JKS\" keystoreFile=\"/opt/tak/certs/files/intermediate-CA-signing.jks\" keystorePass=\"atakatak\" validityDays=\"30\" signatureAlg=\"SHA256WithRSA\"/>\n    </certificateSigning>"
-sed -i "s@$search@$replace@g" $filename
-
-#Add new TLS Config
-search='<tls keystore="JKS" keystoreFile="certs/files/takserver.jks" keystorePass="atakatak" truststore="JKS" truststoreFile="certs/files/truststore-root.jks" truststorePass="atakatak" context="TLSv1.2" keymanager="SunX509"/>'
-replace='<tls keystore="JKS" keystoreFile="/opt/tak/certs/files/takserver.jks" keystorePass="atakatak" crlFile="/opt/tak/certs/files/intermediate-CA.crl" truststore="JKS" truststoreFile="/opt/tak/certs/files/truststore-intermediate-CA.jks" truststorePass="atakatak" context="TLSv1.2" keymanager="SunX509"/>'
-sed -i "s|$search|$replace|" $filename
-
-search='<auth>'
-replace='<auth x509groups=\"true\" x509addAnonymous=\"false\">'
-sed -i "s@$search@$replace@g" $filename
-clear
 
 
 
@@ -254,6 +216,46 @@ do
 	cd /opt/tak/certs && ./makeRootCa.sh --ca-name takserver
 	if [ $? -eq 0 ];
 	then
+	
+		echo "Setting up Certificate Enrollment so you can assign user/pass for login."
+		echo "When asked to move files around, reply Yes"
+		read -p "Press any key to being setup..."
+
+		#Make the int cert and edit the tak config to use it
+		echo "Generating Intermediate Cert"
+		while :
+		do
+			cd /opt/tak/certs/ && ./makeCert.sh ca intermediate-CA
+			if [ $? -eq 0 ];
+			then
+				break
+			else 
+				echo "Retry in 10 sec..."
+				sleep 10
+			fi
+		done
+
+
+		#Add new conx type
+		sed -i '3 a\        <input _name="cassl" auth="x509" protocol="tls" port="8089" />' /opt/tak/CoreConfig.xml
+
+		#Replace CA Config
+		# Set the filename
+		filename="/opt/tak/CoreConfig.xml"
+
+		search="<dissemination smartRetry=\"false\"/>"
+		replace="${search}\n    <certificateSigning CA=\"TAKServer\">\n        <certificateConfig>\n            <nameEntries>\n                <nameEntry name=\"O\" value=\"TAK\"/>\n                <nameEntry name=\"OU\" value=\"TAK\"/>\n            </nameEntries>\n        </certificateConfig>\n        <TAKServerCAConfig keystore=\"JKS\" keystoreFile=\"/opt/tak/certs/files/intermediate-CA-signing.jks\" keystorePass=\"atakatak\" validityDays=\"30\" signatureAlg=\"SHA256WithRSA\"/>\n    </certificateSigning>"
+		sed -i "s@$search@$replace@g" $filename
+
+		#Add new TLS Config
+		search='<tls keystore="JKS" keystoreFile="certs/files/takserver.jks" keystorePass="atakatak" truststore="JKS" truststoreFile="certs/files/truststore-root.jks" truststorePass="atakatak" context="TLSv1.2" keymanager="SunX509"/>'
+		replace='<tls keystore="JKS" keystoreFile="/opt/tak/certs/files/takserver.jks" keystorePass="atakatak" crlFile="/opt/tak/certs/files/intermediate-CA.crl" truststore="JKS" truststoreFile="/opt/tak/certs/files/truststore-intermediate-CA.jks" truststorePass="atakatak" context="TLSv1.2" keymanager="SunX509"/>'
+		sed -i "s|$search|$replace|" $filename
+
+		search='<auth>'
+		replace='<auth x509groups=\"true\" x509addAnonymous=\"false\">'
+		sed -i "s@$search@$replace@g" $filename
+	
 		cd /opt/tak/certs && ./makeCert.sh server intermediate-CA
 		if [ $? -eq 0 ];
 		then
