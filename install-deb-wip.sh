@@ -244,7 +244,7 @@ fi
 echo ""
 read -p "When prompted for password, use 'atakatak' Press any key to resume setup..."
 echo ""
-sudo openssl pkcs12 -export -in /etc/letsencrypt/live/$FQDN/fullchain.pem -inkey /etc/letsencrypt/live/$FQDN/privkey.pem -name $HOSTNAME -out ~/$HOSTNAME.p12
+sudo openssl pkcs12 -export -in /etc/letsencrypt/live/$FQDN/fullchain.pem -inkey /etc/letsencrypt/live/$FQDN/privkey.pem -name $HOSTNAME -out ~/$HOSTNAME.p12 -passout pass:atakatak
 sudo apt install openjdk-16-jre-headless -y
 echo ""
 read -p "If asked to save file becuase an existing copy exists, reply Y. Press any key to resume setup..."
