@@ -118,32 +118,46 @@ sudo apt install /tmp/takserver-deb-installer/$FILE_NAME
 clear
 EOF
 
+echo "Done installing Takserver, setting cert-metadata values..."
+
 #Need to build CoreConfig.xml and put it into /opt/tak/CoreConfig.xml so next script uses it
-# Set variables for generating CA and client certs
+
 echo "SSL Configuration: Hit enter (x3) to accept the defaults:"
+
 read -p "State (for cert generation). Default [state] :" state
 read -p "City (for cert generation). Default [city]:" city
-read -p "Organizational Unit (for cert generation). Default [org]:" orgunit
+read -p "Organizational Unit (for cert generation). Default [org_unit]:" orgunit
+
+# define the input file path
+CERTMETAPATH="/opt/tak/certs/cert-metadata.sh"
 
 if [ -z "$state" ];
 then
-	state="state"
+	# Default state to "STATE"
+	sed -i 's/\${STATE}/\${STATE:-STATE}/g' "$CERTMETAPATH"
+else
+	# Set new defualt from user entry
+	sed -i 's/\${STATE}/\${STATE:-$state}/g' "$CERTMETAPATH"
 fi
 
 if [ -z "$city" ];
 then
-	city="city"
+	# Default city to "CITY"
+	sed -i 's/\${CITY}/\${CITY:-CITY}/g' "$CERTMETAPATH"
+else
+	# Set new defualt from user entry
+	sed -i 's/\${CITY}/\${CITY:-$city}/g' "$CERTMETAPATH"
 fi
 
 if [ -z "$orgunit" ];
 then
-	orgunit="org"
+	# Default org unit to "ORG_UNIT"
+	sed -i 's/\${ORGANIZATIONAL_UNIT}/\${ORGANIZATIONAL_UNIT:-ORG_UNIT}/g' "$CERTMETAPATH"
+else
+	# Default org unit to "ORG_UNIT"
+	sed -i 's/\${ORGANIZATIONAL_UNIT}/\${ORGANIZATIONAL_UNIT:-$orgunit}/g' "$CERTMETAPATH"
 fi
 
-# Update local env - makes these available when the next scripts run
-export STATE=$state
-export CITY=$city
-export ORGANIZATIONAL_UNIT=$orgunit
 
 # Define the characters to include in the random string
 chars='!@#%^*()_+abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -195,7 +209,18 @@ read -p "Press any key to being setup..."
 
 #Make the int cert and edit the tak config to use it
 echo "Generating Intermediate Cert"
-cd /opt/tak/certs/ && ./makeCert.sh ca intermediate-CA
+while:
+do
+	cd /opt/tak/certs/ && ./makeCert.sh ca intermediate-CA
+	if [ $? -eq 0 ];
+	then
+		break
+	else 
+		echo "Retry in 5 sec..."
+		sleep 5
+	fi
+done
+
 
 #Add new conx type
 sed -i '3 a\        <input _name="cassl" auth="x509" protocol="tls" port="8089" />' /opt/tak/CoreConfig.xml
