@@ -236,7 +236,7 @@ do
 		done
 
 	
-		cd /opt/tak/certs && ./makeCert.sh server intermediate-CA
+		cd /opt/tak/certs && ./makeCert.sh server takserver
 		if [ $? -eq 0 ];
 		then
 			cd /opt/tak/certs && ./makeCert.sh client admin	
