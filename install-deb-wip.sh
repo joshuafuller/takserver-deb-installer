@@ -258,9 +258,32 @@ sudo cp ~/$HOSTNAME.p12 /opt/tak/certs/letsencrypt
 sudo chown tak:tak -R /opt/tak/certs/letsencrypt
 
 #Add new Config line
-search='<connector port=\"8446\" clientAuth=\"false\" _name=\"cert_https\"/>'
-replace='<connector port=\"8446\" clientAuth=\"false\" _name=\"cert_https\" truststorePass=\"atakatak\" truststoreFile=\"certs/files/truststore-intermediate-CA.jks\" truststore=\"JKS\" keystorePass=\"atakatak\" keystoreFile=\"certs/letsencrypt/'"$HOSTNAME"'.jks\" keystore=\"JKS\"/>'
-sed -i "s@$search@$replace@g" $filename
+
+max_retries=5
+retry_interval=10 # seconds
+retry_count=0
+
+while [[ $retry_count -lt $max_retries ]]
+do
+	search='<connector port=\"8446\" clientAuth=\"false\" _name=\"cert_https\"/>'
+	replace='<connector port=\"8446\" clientAuth=\"false\" _name=\"cert_https\" truststorePass=\"atakatak\" truststoreFile=\"certs/files/truststore-intermediate-CA.jks\" truststore=\"JKS\" keystorePass=\"atakatak\" keystoreFile=\"certs/letsencrypt/'"$HOSTNAME"'.jks\" keystore=\"JKS\"/>'
+	sed -i "s@$search@$replace@g" $filename
+  
+  if [[ $? -eq 0 ]]; then
+    # Success
+    break
+  else
+    # Retry after interval
+    sleep $retry_interval
+    retry_count=$((retry_count+1))
+  fi
+done
+
+if [[ $retry_count -eq $max_retries ]]; then
+  echo "Failed to update CoreConfig.xml after $retry_count retries"
+  exit 1
+fi
+
 
 echo "Making sure correct java version is set, since we had to install 16 to run this"
 sudo update-alternatives --set java /usr/lib/jvm/java-11-openjdk-amd64/bin/java
@@ -335,43 +358,68 @@ do
 	fi
 done
 
-# Remove unsecure ports in core config
-coreconfig_path="/opt/tak/CoreConfig.xml"
 
-# define the lines to remove
-lines_to_remove=(
-    '<input auth="anonymous" _name="stdtcp" protocol="tcp" port="8087"/>'
-    '<input auth="anonymous" _name="stdudp" protocol="udp" port="8087"/>'
-    '<input auth="anonymous" _name="streamtcp" protocol="stcp" port="8088"/>'
-    '<connector port="8080" tls="false" _name="http_plaintext"/>'
-)
 
-# loop through the lines and remove them from the file
-for line in "${lines_to_remove[@]}"
+max_retries=5
+retry_interval=10 # seconds
+retry_count=0
+
+while [[ $retry_count -lt $max_retries ]]
 do
-   sudo sed -i "\~$line~d" "$coreconfig_path"
+
+	# Remove unsecure ports in core config
+	coreconfig_path="/opt/tak/CoreConfig.xml"
+
+	# define the lines to remove
+	lines_to_remove=(
+	    '<input auth="anonymous" _name="stdtcp" protocol="tcp" port="8087"/>'
+	    '<input auth="anonymous" _name="stdudp" protocol="udp" port="8087"/>'
+	    '<input auth="anonymous" _name="streamtcp" protocol="stcp" port="8088"/>'
+	    '<connector port="8080" tls="false" _name="http_plaintext"/>'
+	)
+
+	# loop through the lines and remove them from the file
+	for line in "${lines_to_remove[@]}"
+	do
+	   sudo sed -i "\~$line~d" "$coreconfig_path"
+	done
+
+
+	#Add new conx type
+	sed -i '3 a\        <input _name="cassl" auth="x509" protocol="tls" port="8089" />' /opt/tak/CoreConfig.xml
+
+	#Replace CA Config
+	# Set the filename
+	filename="/opt/tak/CoreConfig.xml"
+
+	search="<dissemination smartRetry=\"false\"/>"
+	replace="${search}\n    <certificateSigning CA=\"TAKServer\">\n        <certificateConfig>\n            <nameEntries>\n                <nameEntry name=\"O\" value=\"TAK\"/>\n                <nameEntry name=\"OU\" value=\"TAK\"/>\n            </nameEntries>\n        </certificateConfig>\n        <TAKServerCAConfig keystore=\"JKS\" keystoreFile=\"/opt/tak/certs/files/intermediate-CA-signing.jks\" keystorePass=\"atakatak\" validityDays=\"30\" signatureAlg=\"SHA256WithRSA\"/>\n    </certificateSigning>"
+	sed -i "s@$search@$replace@g" $filename
+
+	#Add new TLS Config
+	search='<tls keystore="JKS" keystoreFile="certs/files/takserver.jks" keystorePass="atakatak" truststore="JKS" truststoreFile="certs/files/truststore-root.jks" truststorePass="atakatak" context="TLSv1.2" keymanager="SunX509"/>'
+	replace='<tls keystore="JKS" keystoreFile="certs/files/takserver.jks" keystorePass="atakatak" truststore="JKS" truststoreFile="certs/files/truststore-intermediate-CA.jks" truststorePass="atakatak" context="TLSv1.2" keymanager="SunX509"/>\n      <crl _name="TAKServer CA" crlFile="certs/files/intermediate-CA.crl"/>'
+	sed -i "s|$search|$replace|" $filename
+
+	search='<auth>'
+	replace='<auth x509groups=\"true\" x509addAnonymous=\"false\">'
+	sed -i "s@$search@$replace@g" $filename
+
+  if [[ $? -eq 0 ]]; then
+    # Success
+    break
+  else
+    # Retry after interval
+    sleep $retry_interval
+    retry_count=$((retry_count+1))
+  fi
 done
 
+if [[ $retry_count -eq $max_retries ]]; then
+  echo "Failed to update CoreConfig.xml after $retry_count retries"
+  exit 1
+fi
 
-#Add new conx type
-sed -i '3 a\        <input _name="cassl" auth="x509" protocol="tls" port="8089" />' /opt/tak/CoreConfig.xml
-
-#Replace CA Config
-# Set the filename
-filename="/opt/tak/CoreConfig.xml"
-
-search="<dissemination smartRetry=\"false\"/>"
-replace="${search}\n    <certificateSigning CA=\"TAKServer\">\n        <certificateConfig>\n            <nameEntries>\n                <nameEntry name=\"O\" value=\"TAK\"/>\n                <nameEntry name=\"OU\" value=\"TAK\"/>\n            </nameEntries>\n        </certificateConfig>\n        <TAKServerCAConfig keystore=\"JKS\" keystoreFile=\"/opt/tak/certs/files/intermediate-CA-signing.jks\" keystorePass=\"atakatak\" validityDays=\"30\" signatureAlg=\"SHA256WithRSA\"/>\n    </certificateSigning>"
-sed -i "s@$search@$replace@g" $filename
-
-#Add new TLS Config
-search='<tls keystore="JKS" keystoreFile="certs/files/takserver.jks" keystorePass="atakatak" truststore="JKS" truststoreFile="certs/files/truststore-root.jks" truststorePass="atakatak" context="TLSv1.2" keymanager="SunX509"/>'
-replace='<tls keystore="JKS" keystoreFile="certs/files/takserver.jks" keystorePass="atakatak" truststore="JKS" truststoreFile="certs/files/truststore-intermediate-CA.jks" truststorePass="atakatak" context="TLSv1.2" keymanager="SunX509"/>\n      <crl _name="TAKServer CA" crlFile="certs/files/intermediate-CA.crl"/>'
-sed -i "s|$search|$replace|" $filename
-
-search='<auth>'
-replace='<auth x509groups=\"true\" x509addAnonymous=\"false\">'
-sed -i "s@$search@$replace@g" $filename
 
 
 
