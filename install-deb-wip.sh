@@ -209,7 +209,7 @@ read -p "Press any key to being setup..."
 
 #Make the int cert and edit the tak config to use it
 echo "Generating Intermediate Cert"
-while:
+while :
 do
 	cd /opt/tak/certs/ && ./makeCert.sh ca intermediate-CA
 	if [ $? -eq 0 ];
