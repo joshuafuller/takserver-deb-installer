@@ -36,6 +36,9 @@ Run install script for .deb package of tak server
 - Optional: Configure FQDN for seamless cert enrollment and no SSL warnings in browser
 - Link to admin login with random gen password when script is done
 
+## Notes:
+- FQDN SSL issue was fixed on 4/19/23 latest build
+
 ## To Do:
 - UFW
 - ITAK QR Codes
