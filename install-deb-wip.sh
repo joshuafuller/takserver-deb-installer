@@ -568,7 +568,7 @@ do
 	cd /opt/tak/certs && ./makeRootCa.sh --ca-name takserver-CA
 	if [ $? -eq 0 ];
 	then
-	
+		clear
 		echo "Setting up Certificate Enrollment so you can assign user/pass for login."
 		echo "When asked to move files around, reply Yes"
 		read -p "Press any key to being setup..."
