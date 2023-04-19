@@ -24,7 +24,7 @@ Open a new SSH terminal, and fire this command to remove the apt upgrade lock - 
 ## Second:
 Run install script for .deb package of tak server
 
-``` cd /tmp/ && git clone https://github.com/atakhq/takserver-deb-installer.git && cd ./takserver-deb-installer && sudo chmod +x install-deb.sh && ./install-deb.sh```
+```cd /tmp/ && git clone https://github.com/atakhq/takserver-deb-installer.git && cd ./takserver-deb-installer && sudo chmod +x install-deb.sh && ./install-deb.sh```
 
 
 ## What the script does:
