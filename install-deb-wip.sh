@@ -727,23 +727,8 @@ else
 	echo ""
 fi
 
-if [ "$HAS_SIMPLERTSP" = "1" ] && [ "$HAS_FQDNSSL" = "1" ]; then
-echo " "
-echo "********************************************************************"
-echo "Simple RTSP Server should now be running"
-echo "********************************************************************"
-echo "Verfiy by running the following command:"
-echo "sudo systemctl status rtsp-simple-server"
-echo "********************************************************************"
-echo "You are ready to start streaming video, be sure to unblock the following ports in your firewall config. (TCP & UDP)"
-echo "RTSP ADDRESS: $PUB_SERVER_IP:554"
-echo "RTMP ADDRESS: $PUB_SERVER_IP:1935"
-echo "RTSP ADDRESS: $FQDN:554"
-echo "RTMP ADDRESS: $FQDN:1935"
-echo "********************************************************************"
-echo " "
-fi
-if [ "$HAS_SIMPLERTSP" = "1" ] && [ "$HAS_FQDNSSL" = "0" ]; then
+
+if [ "$HAS_SIMPLERTSP" = "1" ]; then
 echo " "
 echo "********************************************************************"
 echo "Simple RTSP Server should now be running"
