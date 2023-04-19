@@ -235,26 +235,6 @@ do
 			fi
 		done
 
-
-		#Add new conx type
-		sed -i '3 a\        <input _name="cassl" auth="x509" protocol="tls" port="8089" />' /opt/tak/CoreConfig.xml
-
-		#Replace CA Config
-		# Set the filename
-		filename="/opt/tak/CoreConfig.xml"
-
-		search="<dissemination smartRetry=\"false\"/>"
-		replace="${search}\n    <certificateSigning CA=\"TAKServer\">\n        <certificateConfig>\n            <nameEntries>\n                <nameEntry name=\"O\" value=\"TAK\"/>\n                <nameEntry name=\"OU\" value=\"TAK\"/>\n            </nameEntries>\n        </certificateConfig>\n        <TAKServerCAConfig keystore=\"JKS\" keystoreFile=\"/opt/tak/certs/files/intermediate-CA-signing.jks\" keystorePass=\"atakatak\" validityDays=\"30\" signatureAlg=\"SHA256WithRSA\"/>\n    </certificateSigning>"
-		sed -i "s@$search@$replace@g" $filename
-
-		#Add new TLS Config
-		search='<tls keystore="JKS" keystoreFile="certs/files/takserver.jks" keystorePass="atakatak" truststore="JKS" truststoreFile="certs/files/truststore-root.jks" truststorePass="atakatak" context="TLSv1.2" keymanager="SunX509"/>'
-		replace='<tls keystore="JKS" keystoreFile="/opt/tak/certs/files/takserver.jks" keystorePass="atakatak" crlFile="/opt/tak/certs/files/intermediate-CA.crl" truststore="JKS" truststoreFile="/opt/tak/certs/files/truststore-intermediate-CA.jks" truststorePass="atakatak" context="TLSv1.2" keymanager="SunX509"/>'
-		sed -i "s|$search|$replace|" $filename
-
-		search='<auth>'
-		replace='<auth x509groups=\"true\" x509addAnonymous=\"false\">'
-		sed -i "s@$search@$replace@g" $filename
 	
 		cd /opt/tak/certs && ./makeCert.sh server intermediate-CA
 		if [ $? -eq 0 ];
@@ -307,6 +287,28 @@ for line in "${lines_to_remove[@]}"
 do
    sudo sed -i "\~$line~d" "$coreconfig_path"
 done
+
+
+#Add new conx type
+sed -i '3 a\        <input _name="cassl" auth="x509" protocol="tls" port="8089" />' /opt/tak/CoreConfig.xml
+
+#Replace CA Config
+# Set the filename
+filename="/opt/tak/CoreConfig.xml"
+
+search="<dissemination smartRetry=\"false\"/>"
+replace="${search}\n    <certificateSigning CA=\"TAKServer\">\n        <certificateConfig>\n            <nameEntries>\n                <nameEntry name=\"O\" value=\"TAK\"/>\n                <nameEntry name=\"OU\" value=\"TAK\"/>\n            </nameEntries>\n        </certificateConfig>\n        <TAKServerCAConfig keystore=\"JKS\" keystoreFile=\"/opt/tak/certs/files/intermediate-CA-signing.jks\" keystorePass=\"atakatak\" validityDays=\"30\" signatureAlg=\"SHA256WithRSA\"/>\n    </certificateSigning>"
+sed -i "s@$search@$replace@g" $filename
+
+#Add new TLS Config
+search='<tls keystore="JKS" keystoreFile="certs/files/takserver.jks" keystorePass="atakatak" truststore="JKS" truststoreFile="certs/files/truststore-root.jks" truststorePass="atakatak" context="TLSv1.2" keymanager="SunX509"/>'
+replace='<tls keystore="JKS" keystoreFile="/opt/tak/certs/files/takserver.jks" keystorePass="atakatak" crlFile="/opt/tak/certs/files/intermediate-CA.crl" truststore="JKS" truststoreFile="/opt/tak/certs/files/truststore-intermediate-CA.jks" truststorePass="atakatak" context="TLSv1.2" keymanager="SunX509"/>'
+sed -i "s|$search|$replace|" $filename
+
+search='<auth>'
+replace='<auth x509groups=\"true\" x509addAnonymous=\"false\">'
+sed -i "s@$search@$replace@g" $filename
+
 
 clear
 
