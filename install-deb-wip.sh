@@ -189,42 +189,13 @@ sleep 30
 
 clear
 
-while :
-do
-	echo  "------------ROOT CA AND SERVER CERTIFICATE GENERATION--------------"
-	cd /opt/tak/certs && ./makeRootCa.sh --ca-name takserver
-	if [ $? -eq 0 ];
-	then
-		cd /opt/tak/certs && ./makeCert.sh server takserver
-		if [ $? -eq 0 ];
-		then
-			break
-		else
-			sleep 5
-		fi
-	fi
-done
-
-
-clear
-
 echo "Setting up Certificate Enrollment so you can assign user/pass for login."
 echo "When asked to move files around, reply Yes"
 read -p "Press any key to being setup..."
 
 #Make the int cert and edit the tak config to use it
-while :
-do
-	echo  "------------INTERMEDIATE CERTIFICATE GENERATION--------------"
-	cd /opt/tak/certs/ && ./makeCert.sh ca intermediate-CA
-	if [ $? -eq 0 ];
-	then
-		break
-	else
-		sleep 5
-	fi
-done
-
+echo "Generating Intermediate Cert"
+cd /opt/tak/certs/ && ./makeCert.sh ca intermediate-CA
 
 #Add new conx type
 sed -i '3 a\        <input _name="cassl" auth="x509" protocol="tls" port="8089" />' /opt/tak/CoreConfig.xml
@@ -245,33 +216,34 @@ sed -i "s|$search|$replace|" $filename
 search='<auth>'
 replace='<auth x509groups=\"true\" x509addAnonymous=\"false\">'
 sed -i "s@$search@$replace@g" $filename
-
 clear
 
-# Remove unsecure ports in core config
-# define the lines to remove
-lines_to_remove=(
-    '<input auth="anonymous" _name="stdtcp" protocol="tcp" port="8087"/>'
-    '<input auth="anonymous" _name="stdudp" protocol="udp" port="8087"/>'
-    '<input auth="anonymous" _name="streamtcp" protocol="stcp" port="8088"/>'
-    '<connector port="8080" tls="false" _name="http_plaintext"/>'
-)
 
-# loop through the lines and remove them from the file
-for line in "${lines_to_remove[@]}"
-do
-   sudo sed -i "\~$line~d" "$filename"
-done
 
 while :
 do
-	echo  "------------ADMIN CERTIFICATE GENERATION--------------"
-	cd /opt/tak/certs && ./makeCert.sh client admin
+	sleep 10 
+	echo  "------------CERTIFICATE GENERATION--------------"
+	echo " YOU ARE LIKELY GOING TO SEE ERRORS FOR java.lang.reflect..... ignore it and let the script finish it will keep retrying until successful"
+	read -p "Press any key to continue..."
+	cd /opt/tak/certs && ./makeRootCa.sh --ca-name takserver
 	if [ $? -eq 0 ];
 	then
-		break
-	else
-		sleep 5
+		cd /opt/tak/certs && ./makeCert.sh server intermediate-CA
+		if [ $? -eq 0 ];
+		then
+			cd /opt/tak/certs && ./makeCert.sh client admin	
+			if [ $? -eq 0 ];
+			then
+				# Set permissions so user can write to certs/files
+				sudo chown -R $USER:$USER /opt/tak/certs/
+				break
+			else 
+				sleep 5
+			fi
+		else
+			sleep 5
+		fi
 	fi
 done
 
@@ -279,7 +251,6 @@ done
 while :
 do
 	sleep 10
-	echo  "------------ADMIN WEB CERTIFICATE GENERATION--------------"
 	sudo java -jar /opt/tak/utils/UserManager.jar usermod -A -p $adminpass admin
 	if [ $? -eq 0 ];
 	then
@@ -292,6 +263,26 @@ do
 		fi
 	fi
 done
+
+# Remove unsecure ports in core config
+coreconfig_path="/opt/tak/CoreConfig.xml"
+
+# define the lines to remove
+lines_to_remove=(
+    '<input auth="anonymous" _name="stdtcp" protocol="tcp" port="8087"/>'
+    '<input auth="anonymous" _name="stdudp" protocol="udp" port="8087"/>'
+    '<input auth="anonymous" _name="streamtcp" protocol="stcp" port="8088"/>'
+    '<connector port="8080" tls="false" _name="http_plaintext"/>'
+)
+
+# loop through the lines and remove them from the file
+for line in "${lines_to_remove[@]}"
+do
+   sudo sed -i "\~$line~d" "$coreconfig_path"
+done
+
+clear
+
 
 
 #FQDN Setup
@@ -335,9 +326,7 @@ fi
 echo ""
 read -p "When prompted for password, use 'atakatak' Press any key to resume setup..."
 echo ""
-echo "Exporting Certs... Please wait...."
 sudo openssl pkcs12 -export -in /etc/letsencrypt/live/$FQDN/fullchain.pem -inkey /etc/letsencrypt/live/$FQDN/privkey.pem -name $HOSTNAME -out ~/$HOSTNAME.p12
-echo "Export Complete"
 sudo apt install openjdk-16-jre-headless -y
 echo ""
 read -p "If asked to save file becuase an existing copy exists, reply Y. Press any key to resume setup..."
