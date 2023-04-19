@@ -228,6 +228,9 @@ do
 			cd /opt/tak/certs/ && ./makeCert.sh ca intermediate-CA
 			if [ $? -eq 0 ];
 			then
+			// update the makeCert script to use the intermediate ca as issuer
+			sed -i 's|openssl x509 -sha256 -req -days 730 -in "${SNAME}".csr -CA ca.pem -CAkey ca-do-not-share.key -out "${SNAME}".pem -set_serial ${RANDOM} -passin pass:${CAPASS} -extensions $EXT -extfile $CONFIG|openssl x509 -sha256 -req -days 730 -in "${SNAME}".csr -CA intermediate-CA.pem -CAkey intermediate-CA.key -out "${SNAME}".pem -set_serial ${RANDOM} -passin pass:${CAPASS} -extensions $EXT -extfile $CONFIG|g' /opt/tak/certs/makeCert.sh
+
 				break
 			else 
 				echo "Retry in 10 sec..."
