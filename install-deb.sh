@@ -114,36 +114,50 @@ echo "Logging in as tak user to install TakServer..."
 echo "Password is $takpass"
 su - tak <<EOF
 #install the DEB
-sudo apt install /tmp/takserver-deb-installer/$FILE_NAME
+sudo apt install /tmp/takserver-deb-installer/$FILE_NAME -y
 clear
 EOF
 
+echo "Done installing Takserver, setting cert-metadata values..."
+
 #Need to build CoreConfig.xml and put it into /opt/tak/CoreConfig.xml so next script uses it
-# Set variables for generating CA and client certs
+
 echo "SSL Configuration: Hit enter (x3) to accept the defaults:"
+
 read -p "State (for cert generation). Default [state] :" state
 read -p "City (for cert generation). Default [city]:" city
-read -p "Organizational Unit (for cert generation). Default [org]:" orgunit
+read -p "Organizational Unit (for cert generation). Default [org_unit]:" orgunit
+
+# define the input file path
+CERTMETAPATH="/opt/tak/certs/cert-metadata.sh"
 
 if [ -z "$state" ];
 then
-	state="state"
+	# Default state to "STATE"
+	sed -i 's/\${STATE}/\${STATE:-STATE}/g' "$CERTMETAPATH"
+else
+	# Set new defualt from user entry
+	sed -i 's/\${STATE}/\${STATE:-$state}/g' "$CERTMETAPATH"
 fi
 
 if [ -z "$city" ];
 then
-	city="city"
+	# Default city to "CITY"
+	sed -i 's/\${CITY}/\${CITY:-CITY}/g' "$CERTMETAPATH"
+else
+	# Set new defualt from user entry
+	sed -i 's/\${CITY}/\${CITY:-$city}/g' "$CERTMETAPATH"
 fi
 
 if [ -z "$orgunit" ];
 then
-	orgunit="org"
+	# Default org unit to "ORG_UNIT"
+	sed -i 's/\${ORGANIZATIONAL_UNIT}/\${ORGANIZATIONAL_UNIT:-ORG_UNIT}/g' "$CERTMETAPATH"
+else
+	# Default org unit to "ORG_UNIT"
+	sed -i 's/\${ORGANIZATIONAL_UNIT}/\${ORGANIZATIONAL_UNIT:-$orgunit}/g' "$CERTMETAPATH"
 fi
 
-# Update local env - makes these available when the next scripts run
-export STATE=$state
-export CITY=$city
-export ORGANIZATIONAL_UNIT=$orgunit
 
 # Define the characters to include in the random string
 chars='!@#%^*()_+abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -189,15 +203,128 @@ sleep 30
 
 clear
 
+#FQDN Setup
+read -p "Do you want to setup a FQDN? y or n " response
+if [[ $response =~ ^[Yy]$ ]]; then
+#install certbot 
+sudo snap install --classic certbot
+sudo ln -s /snap/bin/certbot /usr/bin/certbot
+echo "What is your domain name? ex: atakhq.com or tak-public.atakhq.com "
+read FQDN
+DOMAIN=$FQDN
+echo ""
+echo "What is your hostname? ex: atakhq-com or tak-public-atakhq-com "
+echo "** Suggest using same value you entered for domain name but replace . with -"
+read HOSTNAME
+#request inital cert
+
+# Check for existing certificates
+EXISTING_CERTS=$(sudo certbot certificates)
+if [[ $EXISTING_CERTS =~ "Certificate Name: $DOMAIN" ]]; then
+  echo "Certificate found for $DOMAIN"
+  CERT_NAME=$(echo "$EXISTING_CERTS" | grep -oP "(?<=Certificate Name: ).*" | head -1)
+  echo "Using existing certificate: $CERT_NAME"
+else
+  echo "No existing certificates found for $DOMAIN"
+  echo "Requesting a new certificate..."
+  # Request a new certificate
+  echo "What is your email? - Needed for Letsencrypt Alerts"
+  read EMAIL
+
+  if certbot certonly --standalone -d $DOMAIN -m $EMAIL --agree-tos --non-interactive; then
+    echo "Certificate obtained successfully!"
+    CERT_NAME=$(sudo certbot certificates | grep -oP "(?<=Certificate Name: ).*")
+  else
+    echo "Error obtaining certificate: $(sudo certbot certificates)"
+    exit 1
+  fi
+fi
+
+
+echo ""
+read -p "When prompted for password, use 'atakatak' Press any key to resume setup..."
+echo ""
+sudo openssl pkcs12 -export -in /etc/letsencrypt/live/$FQDN/fullchain.pem -inkey /etc/letsencrypt/live/$FQDN/privkey.pem -name $HOSTNAME -out ~/$HOSTNAME.p12 -passout pass:atakatak
+sudo apt install openjdk-16-jre-headless -y
+echo ""
+read -p "If asked to save file becuase an existing copy exists, reply Y. Press any key to resume setup..."
+echo ""
+sudo keytool -importkeystore -deststorepass atakatak -srcstorepass atakatak -destkeystore ~/$HOSTNAME.jks -srckeystore ~/$HOSTNAME.p12 -srcstoretype PKCS12
+sudo keytool -import -alias bundle -trustcacerts -srcstorepass atakatak -file /etc/letsencrypt/live/$FQDN/fullchain.pem -keystore ~/$HOSTNAME.jks
+#copy files to common folder
+sudo mkdir /opt/tak/certs/letsencrypt
+sudo cp ~/$HOSTNAME.jks /opt/tak/certs/letsencrypt
+sudo cp ~/$HOSTNAME.p12 /opt/tak/certs/letsencrypt
+sudo chown tak:tak -R /opt/tak/certs/letsencrypt
+
+#Add new Config line
+
+max_retries=5
+retry_interval=10 # seconds
+retry_count=0
+
+while [[ $retry_count -lt $max_retries ]]
+do
+	# Set the filename
+	filename="/opt/tak/CoreConfig.xml"
+	search='<connector port=\"8446\" clientAuth=\"false\" _name=\"cert_https\"/>'
+	replace='<connector port=\"8446\" clientAuth=\"false\" _name=\"cert_https\" truststorePass=\"atakatak\" truststoreFile=\"certs/files/truststore-intermediate-CA.jks\" truststore=\"JKS\" keystorePass=\"atakatak\" keystoreFile=\"certs/letsencrypt/'"$HOSTNAME"'.jks\" keystore=\"JKS\"/>'
+	sed -i "s@$search@$replace@g" $filename
+  
+  if [[ $? -eq 0 ]]; then
+    # Success
+    break
+  else
+    # Retry after interval
+    sleep $retry_interval
+    retry_count=$((retry_count+1))
+  fi
+done
+
+if [[ $retry_count -eq $max_retries ]]; then
+  echo "Failed to update CoreConfig.xml after $retry_count retries"
+  exit 1
+fi
+
+
+echo "Making sure correct java version is set, since we had to install 16 to run this"
+sudo update-alternatives --set java /usr/lib/jvm/java-11-openjdk-amd64/bin/java
+
+else
+  echo "skipping FQDN setup..."
+fi
+
+
+
 while :
 do
 	sleep 10 
-	echo  "------------CERTIFICATE GENERATION--------------\n"
+	echo  "------------CERTIFICATE GENERATION--------------"
 	echo " YOU ARE LIKELY GOING TO SEE ERRORS FOR java.lang.reflect..... ignore it and let the script finish it will keep retrying until successful"
 	read -p "Press any key to continue..."
-	cd /opt/tak/certs && ./makeRootCa.sh --ca-name takserver
+	cd /opt/tak/certs && ./makeRootCa.sh --ca-name takserver-CA
 	if [ $? -eq 0 ];
 	then
+	
+		echo "Setting up Certificate Enrollment so you can assign user/pass for login."
+		echo "When asked to move files around, reply Yes"
+		read -p "Press any key to being setup..."
+
+		#Make the int cert and edit the tak config to use it
+		echo "Generating Intermediate Cert"
+		while :
+		do
+			cd /opt/tak/certs/ && ./makeCert.sh ca intermediate-CA
+			if [ $? -eq 0 ];
+			then
+				break
+			else 
+				echo "Retry in 10 sec..."
+				sleep 10
+			fi
+		done
+
+	
 		cd /opt/tak/certs && ./makeCert.sh server takserver
 		if [ $? -eq 0 ];
 		then
@@ -233,119 +360,69 @@ do
 	fi
 done
 
-# Remove unsecure ports in core config
-coreconfig_path="/opt/tak/CoreConfig.xml"
 
-# define the lines to remove
-lines_to_remove=(
-    '<input auth="anonymous" _name="stdtcp" protocol="tcp" port="8087"/>'
-    '<input auth="anonymous" _name="stdudp" protocol="udp" port="8087"/>'
-    '<input auth="anonymous" _name="streamtcp" protocol="stcp" port="8088"/>'
-    '<connector port="8080" tls="false" _name="http_plaintext"/>'
-)
 
-# loop through the lines and remove them from the file
-for line in "${lines_to_remove[@]}"
+max_retries=5
+retry_interval=10 # seconds
+retry_count=0
+
+while [[ $retry_count -lt $max_retries ]]
 do
-   sudo sed -i "\~$line~d" "$coreconfig_path"
+
+	# Remove unsecure ports in core config
+	coreconfig_path="/opt/tak/CoreConfig.xml"
+
+	# define the lines to remove
+	lines_to_remove=(
+	    '<input auth="anonymous" _name="stdtcp" protocol="tcp" port="8087"/>'
+	    '<input auth="anonymous" _name="stdudp" protocol="udp" port="8087"/>'
+	    '<input auth="anonymous" _name="streamtcp" protocol="stcp" port="8088"/>'
+	    '<connector port="8080" tls="false" _name="http_plaintext"/>'
+	)
+
+	# loop through the lines and remove them from the file
+	for line in "${lines_to_remove[@]}"
+	do
+	   sudo sed -i "\~$line~d" "$coreconfig_path"
+	done
+
+
+	#Add new conx type
+	sed -i '3 a\        <input _name="cassl" auth="x509" protocol="tls" port="8089" />' /opt/tak/CoreConfig.xml
+
+	#Replace CA Config
+	# Set the filename
+	filename="/opt/tak/CoreConfig.xml"
+
+	search="<dissemination smartRetry=\"false\"/>"
+	replace="${search}\n    <certificateSigning CA=\"TAKServer\">\n        <certificateConfig>\n            <nameEntries>\n                <nameEntry name=\"O\" value=\"TAK\"/>\n                <nameEntry name=\"OU\" value=\"TAK\"/>\n            </nameEntries>\n        </certificateConfig>\n        <TAKServerCAConfig keystore=\"JKS\" keystoreFile=\"/opt/tak/certs/files/intermediate-CA-signing.jks\" keystorePass=\"atakatak\" validityDays=\"30\" signatureAlg=\"SHA256WithRSA\"/>\n    </certificateSigning>"
+	sed -i "s@$search@$replace@g" $filename
+
+	#Add new TLS Config
+	search='<tls keystore="JKS" keystoreFile="certs/files/takserver.jks" keystorePass="atakatak" truststore="JKS" truststoreFile="certs/files/truststore-root.jks" truststorePass="atakatak" context="TLSv1.2" keymanager="SunX509"/>'
+	replace='<tls keystore="JKS" keystoreFile="certs/files/takserver.jks" keystorePass="atakatak" truststore="JKS" truststoreFile="certs/files/truststore-intermediate-CA.jks" truststorePass="atakatak" context="TLSv1.2" keymanager="SunX509"/>\n      <crl _name="TAKServer CA" crlFile="certs/files/intermediate-CA.crl"/>'
+	sed -i "s|$search|$replace|" $filename
+
+	search='<auth>'
+	replace='<auth x509groups=\"true\" x509addAnonymous=\"false\" x509useGroupCache=\"true\" x509checkRevocation=\"true\">'
+	
+	sed -i "s@$search@$replace@g" $filename
+
+  if [[ $? -eq 0 ]]; then
+    # Success
+    break
+  else
+    # Retry after interval
+    sleep $retry_interval
+    retry_count=$((retry_count+1))
+  fi
 done
 
-clear
-
-echo "Setting up Certificate Enrollment so you can assign user/pass for login."
-echo "When asked to move files around, reply Yes"
-read -p "Press any key to being setup..."
-
-#Make the int cert and edit the tak config to use it
-echo "Generating Intermediate Cert"
-cd /opt/tak/certs/ && ./makeCert.sh ca intermediate-CA
-
-#Add new conx type
-sed -i '3 a\        <input _name="cassl" auth="x509" protocol="tls" port="8089" />' /opt/tak/CoreConfig.xml
-
-#Replace CA Config
-# Set the filename
-filename="/opt/tak/CoreConfig.xml"
-
-search="<dissemination smartRetry=\"false\"/>"
-replace="${search}\n    <certificateSigning CA=\"TAKServer\">\n        <certificateConfig>\n            <nameEntries>\n                <nameEntry name=\"O\" value=\"TAK\"/>\n                <nameEntry name=\"OU\" value=\"TAK\"/>\n            </nameEntries>\n        </certificateConfig>\n        <TAKServerCAConfig keystore=\"JKS\" keystoreFile=\"/opt/tak/certs/files/intermediate-CA-signing.jks\" keystorePass=\"atakatak\" validityDays=\"30\" signatureAlg=\"SHA256WithRSA\"/>\n    </certificateSigning>"
-sed -i "s@$search@$replace@g" $filename
-
-#Add new TLS Config
-search='<tls keystore="JKS" keystoreFile="certs/files/takserver.jks" keystorePass="atakatak" truststore="JKS" truststoreFile="certs/files/truststore-root.jks" truststorePass="atakatak" context="TLSv1.2" keymanager="SunX509"/>'
-replace='<tls keystore="JKS" keystoreFile="/opt/tak/certs/files/takserver.jks" keystorePass="atakatak" crlFile="/opt/tak/certs/files/intermediate-CA.crl" truststore="JKS" truststoreFile="/opt/tak/certs/files/truststore-intermediate-CA.jks" truststorePass="atakatak" context="TLSv1.2" keymanager="SunX509"/>'
-sed -i "s|$search|$replace|" $filename
-
-search='<auth>'
-replace='<auth x509groups=\"true\" x509addAnonymous=\"false\">'
-sed -i "s@$search@$replace@g" $filename
-clear
-
-#FQDN Setup
-read -p "Do you want to setup a FQDN? y or n " response
-if [[ $response =~ ^[Yy]$ ]]; then
-#install certbot 
-sudo snap install --classic certbot
-sudo ln -s /snap/bin/certbot /usr/bin/certbot
-echo "What is your domain name? ex: atakhq.com or tak-public.atakhq.com "
-read FQDN
-DOMAIN=$FQDN
-echo ""
-echo "What is your hostname? ex: atakhq-com or tak-public-atakhq-com "
-echo "** Suggest using same value you entered for domain name but replace . with -"
-read HOSTNAME
-#request inital cert
-
-# Check for existing certificates
-EXISTING_CERTS=$(sudo certbot certificates)
-if [[ $EXISTING_CERTS =~ "Certificate Name: $DOMAIN" ]]; then
-  echo "Certificate found for $DOMAIN"
-  CERT_NAME=$(echo "$EXISTING_CERTS" | grep -oP "(?<=Certificate Name: ).*" | head -1)
-  echo "Using existing certificate: $CERT_NAME"
-else
-  echo "No existing certificates found for $DOMAIN"
-  echo "Requesting a new certificate..."
-  # Request a new certificate
-  echo "What is your email?"
-  read EMAIL
-
-  if certbot certonly --standalone -d $DOMAIN -m $EMAIL --agree-tos --non-interactive ; then
-    echo "Certificate obtained successfully!"
-    CERT_NAME=$(sudo certbot certificates | grep -oP "(?<=Certificate Name: ).*")
-  else
-    echo "Error obtaining certificate: $(sudo certbot certificates)"
-    exit 1
-  fi
+if [[ $retry_count -eq $max_retries ]]; then
+  echo "Failed to update CoreConfig.xml after $retry_count retries"
+  exit 1
 fi
 
-
-echo ""
-read -p "When prompted for password, use 'atakatak' Press any key to resume setup..."
-echo ""
-sudo openssl pkcs12 -export -in /etc/letsencrypt/live/$FQDN/fullchain.pem -inkey /etc/letsencrypt/live/$FQDN/privkey.pem -name $HOSTNAME -out ~/$HOSTNAME.p12
-sudo apt install openjdk-16-jre-headless -y
-echo ""
-read -p "If asked to save file becuase an existing copy exists, reply Y. Press any key to resume setup..."
-echo ""
-sudo keytool -importkeystore -deststorepass atakatak -destkeystore ~/$HOSTNAME.jks -srckeystore ~/$HOSTNAME.p12 -srcstoretype PKCS12
-sudo keytool -import -alias bundle -trustcacerts -file /etc/letsencrypt/live/$FQDN/fullchain.pem -keystore ~/$HOSTNAME.jks
-#copy files to common folder
-sudo mkdir /opt/tak/certs/letsencrypt
-sudo cp ~/$HOSTNAME.jks /opt/tak/certs/letsencrypt
-sudo cp ~/$HOSTNAME.p12 /opt/tak/certs/letsencrypt
-sudo chown tak:tak -R /opt/tak/certs/letsencrypt
-
-#Add new Config line
-search='<connector port=\"8446\" clientAuth=\"false\" _name=\"cert_https\"/>'
-replace='<connector port=\"8446\" clientAuth=\"false\" _name=\"cert_https\" truststorePass=\"atakatak\" truststoreFile=\"certs/files/truststore-intermediate-CA.jks\" truststore=\"JKS\" keystorePass=\"atakatak\" keystoreFile=\"certs/letsencrypt/'"$HOSTNAME"'.jks\" keystore=\"JKS\"/>'
-sed -i "s@$search@$replace@g" $filename
-
-echo "Making sure correct java version is set, since we had to install 16 to run this"
-sudo update-alternatives --set java /usr/lib/jvm/java-11-openjdk-amd64/bin/java
-
-else
-  echo "skipping FQDN setup..."
-fi
 
 
 
