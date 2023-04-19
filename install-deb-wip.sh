@@ -265,6 +265,8 @@ retry_count=0
 
 while [[ $retry_count -lt $max_retries ]]
 do
+	# Set the filename
+	filename="/opt/tak/CoreConfig.xml"
 	search='<connector port=\"8446\" clientAuth=\"false\" _name=\"cert_https\"/>'
 	replace='<connector port=\"8446\" clientAuth=\"false\" _name=\"cert_https\" truststorePass=\"atakatak\" truststoreFile=\"certs/files/truststore-intermediate-CA.jks\" truststore=\"JKS\" keystorePass=\"atakatak\" keystoreFile=\"certs/letsencrypt/'"$HOSTNAME"'.jks\" keystore=\"JKS\"/>'
 	sed -i "s@$search@$replace@g" $filename
