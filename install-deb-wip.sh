@@ -231,7 +231,7 @@ else
   echo "What is your email? - Needed for Letsencrypt Alerts"
   read EMAIL
 
-  if certbot certonly --standalone -d $DOMAIN -m $EMAIL --agree-tos --non-interactive --rsa-key-encryption-password 'atakatak'; then
+  if certbot certonly --standalone -d $DOMAIN -m $EMAIL --agree-tos --non-interactive; then
     echo "Certificate obtained successfully!"
     CERT_NAME=$(sudo certbot certificates | grep -oP "(?<=Certificate Name: ).*")
   else
