@@ -37,9 +37,11 @@ Run install script for .deb package of tak server
 - Link to admin login with random gen password when script is done
 
 ## Notes:
-- FQDN SSL issue was fixed on 4/19/23 latest build
+- 4/19/2023
+  - FQDN SSL issue was fixed
+  - rtsp-simple-server installer prompt added
 
 ## To Do:
 - UFW
 - ITAK QR Codes
-- simple-rtsp-installer
+
