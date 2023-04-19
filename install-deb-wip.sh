@@ -203,7 +203,71 @@ sleep 30
 
 clear
 
+#FQDN Setup
+read -p "Do you want to setup a FQDN? y or n " response
+if [[ $response =~ ^[Yy]$ ]]; then
+#install certbot 
+sudo snap install --classic certbot
+sudo ln -s /snap/bin/certbot /usr/bin/certbot
+echo "What is your domain name? ex: atakhq.com or tak-public.atakhq.com "
+read FQDN
+DOMAIN=$FQDN
+echo ""
+echo "What is your hostname? ex: atakhq-com or tak-public-atakhq-com "
+echo "** Suggest using same value you entered for domain name but replace . with -"
+read HOSTNAME
+#request inital cert
 
+# Check for existing certificates
+EXISTING_CERTS=$(sudo certbot certificates)
+if [[ $EXISTING_CERTS =~ "Certificate Name: $DOMAIN" ]]; then
+  echo "Certificate found for $DOMAIN"
+  CERT_NAME=$(echo "$EXISTING_CERTS" | grep -oP "(?<=Certificate Name: ).*" | head -1)
+  echo "Using existing certificate: $CERT_NAME"
+else
+  echo "No existing certificates found for $DOMAIN"
+  echo "Requesting a new certificate..."
+  # Request a new certificate
+  echo "What is your email?"
+  read EMAIL
+
+  if certbot certonly --standalone -d $DOMAIN -m $EMAIL --agree-tos --non-interactive ; then
+    echo "Certificate obtained successfully!"
+    CERT_NAME=$(sudo certbot certificates | grep -oP "(?<=Certificate Name: ).*")
+  else
+    echo "Error obtaining certificate: $(sudo certbot certificates)"
+    exit 1
+  fi
+fi
+
+
+echo ""
+read -p "When prompted for password, use 'atakatak' Press any key to resume setup..."
+echo ""
+sudo openssl pkcs12 -export -in /etc/letsencrypt/live/$FQDN/fullchain.pem -inkey /etc/letsencrypt/live/$FQDN/privkey.pem -name $HOSTNAME -out ~/$HOSTNAME.p12
+sudo apt install openjdk-16-jre-headless -y
+echo ""
+read -p "If asked to save file becuase an existing copy exists, reply Y. Press any key to resume setup..."
+echo ""
+sudo keytool -importkeystore -deststorepass atakatak -destkeystore ~/$HOSTNAME.jks -srckeystore ~/$HOSTNAME.p12 -srcstoretype PKCS12
+sudo keytool -import -alias bundle -trustcacerts -file /etc/letsencrypt/live/$FQDN/fullchain.pem -keystore ~/$HOSTNAME.jks
+#copy files to common folder
+sudo mkdir /opt/tak/certs/letsencrypt
+sudo cp ~/$HOSTNAME.jks /opt/tak/certs/letsencrypt
+sudo cp ~/$HOSTNAME.p12 /opt/tak/certs/letsencrypt
+sudo chown tak:tak -R /opt/tak/certs/letsencrypt
+
+#Add new Config line
+search='<connector port=\"8446\" clientAuth=\"false\" _name=\"cert_https\"/>'
+replace='<connector port=\"8446\" clientAuth=\"false\" _name=\"cert_https\" truststorePass=\"atakatak\" truststoreFile=\"certs/files/truststore-intermediate-CA.jks\" truststore=\"JKS\" keystorePass=\"atakatak\" keystoreFile=\"certs/letsencrypt/'"$HOSTNAME"'.jks\" keystore=\"JKS\"/>'
+sed -i "s@$search@$replace@g" $filename
+
+echo "Making sure correct java version is set, since we had to install 16 to run this"
+sudo update-alternatives --set java /usr/lib/jvm/java-11-openjdk-amd64/bin/java
+
+else
+  echo "skipping FQDN setup..."
+fi
 
 
 
@@ -213,7 +277,7 @@ do
 	echo  "------------CERTIFICATE GENERATION--------------"
 	echo " YOU ARE LIKELY GOING TO SEE ERRORS FOR java.lang.reflect..... ignore it and let the script finish it will keep retrying until successful"
 	read -p "Press any key to continue..."
-	cd /opt/tak/certs && ./makeRootCa.sh --ca-name takserver
+	cd /opt/tak/certs && ./makeRootCa.sh --ca-name takserver-CA
 	if [ $? -eq 0 ];
 	then
 	
@@ -228,9 +292,6 @@ do
 			cd /opt/tak/certs/ && ./makeCert.sh ca intermediate-CA
 			if [ $? -eq 0 ];
 			then
-			// update the makeCert script to use the intermediate ca as issuer
-			sed -i 's|openssl x509 -sha256 -req -days 730 -in "${SNAME}".csr -CA ca.pem -CAkey ca-do-not-share.key -out "${SNAME}".pem -set_serial ${RANDOM} -passin pass:${CAPASS} -extensions $EXT -extfile $CONFIG|openssl x509 -sha256 -req -days 730 -in "${SNAME}".csr -CA intermediate-CA.pem -CAkey intermediate-CA.key -out "${SNAME}".pem -set_serial ${RANDOM} -passin pass:${CAPASS} -extensions $EXT -extfile $CONFIG|g' /opt/tak/certs/makeCert.sh
-
 				break
 			else 
 				echo "Retry in 10 sec..."
@@ -305,83 +366,12 @@ sed -i "s@$search@$replace@g" $filename
 
 #Add new TLS Config
 search='<tls keystore="JKS" keystoreFile="certs/files/takserver.jks" keystorePass="atakatak" truststore="JKS" truststoreFile="certs/files/truststore-root.jks" truststorePass="atakatak" context="TLSv1.2" keymanager="SunX509"/>'
-replace='<tls keystore="JKS" keystoreFile="/opt/tak/certs/files/takserver.jks" keystorePass="atakatak" crlFile="/opt/tak/certs/files/intermediate-CA.crl" truststore="JKS" truststoreFile="/opt/tak/certs/files/truststore-intermediate-CA.jks" truststorePass="atakatak" context="TLSv1.2" keymanager="SunX509"/>'
+replace='<tls keystore="JKS" keystoreFile="certs/files/takserver.jks" keystorePass="atakatak" truststore="JKS" truststoreFile="certs/files/truststore-intermediate-CA.jks" truststorePass="atakatak" context="TLSv1.2" keymanager="SunX509"/>\n      <crl _name="TAKServer CA" crlFile="certs/files/intermediate-CA.crl"/>'
 sed -i "s|$search|$replace|" $filename
 
 search='<auth>'
 replace='<auth x509groups=\"true\" x509addAnonymous=\"false\">'
 sed -i "s@$search@$replace@g" $filename
-
-
-clear
-
-
-
-#FQDN Setup
-read -p "Do you want to setup a FQDN? y or n " response
-if [[ $response =~ ^[Yy]$ ]]; then
-#install certbot 
-sudo snap install --classic certbot
-sudo ln -s /snap/bin/certbot /usr/bin/certbot
-echo "What is your domain name? ex: atakhq.com or tak-public.atakhq.com "
-read FQDN
-DOMAIN=$FQDN
-echo ""
-echo "What is your hostname? ex: atakhq-com or tak-public-atakhq-com "
-echo "** Suggest using same value you entered for domain name but replace . with -"
-read HOSTNAME
-#request inital cert
-
-# Check for existing certificates
-EXISTING_CERTS=$(sudo certbot certificates)
-if [[ $EXISTING_CERTS =~ "Certificate Name: $DOMAIN" ]]; then
-  echo "Certificate found for $DOMAIN"
-  CERT_NAME=$(echo "$EXISTING_CERTS" | grep -oP "(?<=Certificate Name: ).*" | head -1)
-  echo "Using existing certificate: $CERT_NAME"
-else
-  echo "No existing certificates found for $DOMAIN"
-  echo "Requesting a new certificate..."
-  # Request a new certificate
-  echo "What is your email?"
-  read EMAIL
-
-  if certbot certonly --standalone -d $DOMAIN -m $EMAIL --agree-tos --non-interactive ; then
-    echo "Certificate obtained successfully!"
-    CERT_NAME=$(sudo certbot certificates | grep -oP "(?<=Certificate Name: ).*")
-  else
-    echo "Error obtaining certificate: $(sudo certbot certificates)"
-    exit 1
-  fi
-fi
-
-
-echo ""
-read -p "When prompted for password, use 'atakatak' Press any key to resume setup..."
-echo ""
-sudo openssl pkcs12 -export -in /etc/letsencrypt/live/$FQDN/fullchain.pem -inkey /etc/letsencrypt/live/$FQDN/privkey.pem -name $HOSTNAME -out ~/$HOSTNAME.p12
-sudo apt install openjdk-16-jre-headless -y
-echo ""
-read -p "If asked to save file becuase an existing copy exists, reply Y. Press any key to resume setup..."
-echo ""
-sudo keytool -importkeystore -deststorepass atakatak -destkeystore ~/$HOSTNAME.jks -srckeystore ~/$HOSTNAME.p12 -srcstoretype PKCS12
-sudo keytool -import -alias bundle -trustcacerts -file /etc/letsencrypt/live/$FQDN/fullchain.pem -keystore ~/$HOSTNAME.jks
-#copy files to common folder
-sudo mkdir /opt/tak/certs/letsencrypt
-sudo cp ~/$HOSTNAME.jks /opt/tak/certs/letsencrypt
-sudo cp ~/$HOSTNAME.p12 /opt/tak/certs/letsencrypt
-sudo chown tak:tak -R /opt/tak/certs/letsencrypt
-
-#Add new Config line
-search='<connector port=\"8446\" clientAuth=\"false\" _name=\"cert_https\"/>'
-replace='<connector port=\"8446\" clientAuth=\"false\" _name=\"cert_https\" truststorePass=\"atakatak\" truststoreFile=\"certs/files/truststore-intermediate-CA.jks\" truststore=\"JKS\" keystorePass=\"atakatak\" keystoreFile=\"certs/letsencrypt/'"$HOSTNAME"'.jks\" keystore=\"JKS\"/>'
-sed -i "s@$search@$replace@g" $filename
-
-echo "Making sure correct java version is set, since we had to install 16 to run this"
-sudo update-alternatives --set java /usr/lib/jvm/java-11-openjdk-amd64/bin/java
-
-else
-  echo "skipping FQDN setup..."
-fi
 
 
 
