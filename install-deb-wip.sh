@@ -114,7 +114,7 @@ echo "Logging in as tak user to install TakServer..."
 echo "Password is $takpass"
 su - tak <<EOF
 #install the DEB
-sudo apt install /tmp/takserver-deb-installer/$FILE_NAME
+sudo apt install /tmp/takserver-deb-installer/$FILE_NAME -y
 clear
 EOF
 
