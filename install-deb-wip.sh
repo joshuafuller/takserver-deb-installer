@@ -404,7 +404,8 @@ do
 	sed -i "s|$search|$replace|" $filename
 
 	search='<auth>'
-	replace='<auth x509groups=\"true\" x509addAnonymous=\"false\">'
+	replace='<auth x509groups=\"true\" x509addAnonymous=\"false\" x509useGroupCache=\"true\" x509checkRevocation=\"true\">'
+	
 	sed -i "s@$search@$replace@g" $filename
 
   if [[ $? -eq 0 ]]; then
