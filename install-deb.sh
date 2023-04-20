@@ -98,6 +98,39 @@ done
 # Output the generated password
 echo "Generated tak password: $takpass"
 
+# Define the characters to include in the random string
+chars='!@#%^*()_+abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+
+# Get the length of the string to generate 
+length=15
+
+# Generate a random pw for admin account
+has_upper=false
+has_lower=false
+has_digit=false
+has_special=false
+
+while [[ "$has_upper" != true || "$has_lower" != true || "$has_digit" != true || "$has_special" != true ]]; do
+    adminpass=$(head /dev/urandom | tr -dc "$chars" | head -c "$length")
+    for (( i=0; i<${#adminpass}; i++ )); do
+        char="${adminpass:i:1}"
+        if [[ "$char" =~ [A-Z] ]]; then
+            has_upper=true
+        elif [[ "$char" =~ [a-z] ]]; then
+            has_lower=true
+        elif [[ "$char" =~ [0-9] ]]; then
+            has_digit=true
+        elif [[ "$char" =~ [!@#%^*()_+] ]]; then
+            has_special=true
+        fi
+    done
+done
+
+# Output the generated password
+echo "Generated admin web-portal password: $adminpass"
+
+
+
 #create tak user to run the service under
 takuser="tak"
 
