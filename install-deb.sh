@@ -147,11 +147,6 @@ echo "$takuser:$password" | chpasswd
 #adduser $takuser
 usermod -aG sudo $takuser
 
-sudo apt-get update -y
-
-#Install Deps
-sudo apt-get install unzip zip wget git nano openssl net-tools dirmngr ca-certificates software-properties-common gnupg gnupg2 apt-transport-https curl openjdk-11-jdk -y
-
 #import postgres repo
 curl -fSsL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor | sudo tee /usr/share/keyrings/postgresql.gpg > /dev/null
 
@@ -159,9 +154,11 @@ curl -fSsL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor | 
 #20.04
 echo deb [arch=amd64,arm64,ppc64el signed-by=/usr/share/keyrings/postgresql.gpg] http://apt.postgresql.org/pub/repos/apt/ focal-pgdg main | sudo tee -a /etc/apt/sources.list.d/postgresql.list
 
-#install postgresql
-sudo apt-get update
-sudo apt install postgresql-client-15 postgresql-15 postgresql-15-postgis-3 -y
+sudo apt-get update -y
+
+#Install Deps
+sudo apt-get install postgresql-client-15 postgresql-15 postgresql-15-postgis-3 unzip zip wget git nano openssl net-tools dirmngr ca-certificates software-properties-common gnupg gnupg2 apt-transport-https curl openjdk-11-jdk -y
+
 
 clear
 
