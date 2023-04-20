@@ -372,13 +372,22 @@ fi
 
 
 #login as tak user and install there
-echo "Logging in as tak user to install TakServer..."
+echo "Login in as tak user to install TakServer..."
 echo "Password is $takpass"
+
+
 su - tak <<EOF
-#install the DEB
-sudo apt install /tmp/takserver-deb-installer/$FILE_NAME -y
-clear
+        echo "------------ INSTALLING TAK SERVER DEB -----------------"
+
+        RETRY_LIMIT=5
+
+        for ((i=1;i<=RETRY_LIMIT;i++)); do
+            sudo apt install /tmp/takserver-deb-installer/$FILE_NAME -y && break
+            echo "Retry $i: Failed to install the package. Retrying in 5 seconds..."
+            sleep 5
+        done
 EOF
+
 
 echo "Done installing Takserver, setting cert-metadata values..."
 
