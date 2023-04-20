@@ -395,9 +395,12 @@ fi
 
 
 #login as tak user and install there
+
+
+while true; do
+
 echo "Login in as tak user to install TakServer..."
 echo "Password is $takpass"
-
 
 su - tak <<EOF
         echo "------------ INSTALLING TAK SERVER DEB -----------------"
@@ -410,6 +413,30 @@ su - tak <<EOF
             sleep 5
         done
 EOF
+    if [ -d "/opt/tak/certs" ]; then
+        # Path exists, continue with the script
+        break
+    fi
+
+    if [ "$retry_count" -ge "$RETRY_LIMIT" ]; then
+        # Retry limit reached, exit the script
+        echo "Error: /opt/tak/certs directory not found after $RETRY_LIMIT retries, exiting..."
+        exit 1
+    fi
+
+    # Path not found, prompt for retry
+    echo "Error: /opt/tak/certs directory not found (retry count: $retry_count)"
+    read -p "Do you want to retry running the installer? [y/N] " retry
+
+    if [[ "$retry" =~ ^[Yy]$ ]]; then
+        # Increment retry count and continue to the next iteration of the loop
+        ((retry_count++))
+        continue
+    else
+        # User chose not to retry, exit the script
+        exit 1
+    fi
+done
 
 
 echo "Done installing Takserver, setting cert-metadata values..."
