@@ -490,12 +490,12 @@ sleep 30
 
 #edit the service to run as tak user
 # Get the path to the service file
-SERVICE_FILE=$(systemctl cat takserver | grep -E "^SourcePath=" | awk -F "=" '{print $2}')
+#SERVICE_FILE=$(systemctl cat takserver | grep -E "^SourcePath=" | awk -F "=" '{print $2}')
 
 # Add the User directive to the service file
-sudo sed -i "s/^\[Service\]$/&\nUser=$takuser/" "$SERVICE_FILE"
+#sudo sed -i "s/^\[Service\]$/&\nUser=$takuser/" "$SERVICE_FILE"
 
-sudo systemctl daemon-reload
+#sudo systemctl daemon-reload
 
 clear
 
