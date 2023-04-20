@@ -403,6 +403,7 @@ done
 
 sudo chown -R tak:tak /opt/tak
 
+clear
 
 echo "Done installing Takserver, setting cert-metadata values..."
 
