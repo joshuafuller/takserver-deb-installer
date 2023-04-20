@@ -514,7 +514,7 @@ echo ""
 read -p "If prompted for password, use 'atakatak' Press any key to resume setup..."
 echo ""
 sudo keytool -importkeystore -deststorepass atakatak -srcstorepass atakatak -destkeystore ~/$HOSTNAME.jks -srckeystore ~/$HOSTNAME.p12 -srcstoretype PKCS12
-sudo keytool -import -alias bundle -trustcacerts -srcstorepass atakatak -file /etc/letsencrypt/live/$FQDN/fullchain.pem -keystore ~/$HOSTNAME.jks
+sudo keytool -import -alias bundle -trustcacerts -deststorepass atakatak -srcstorepass atakatak -file /etc/letsencrypt/live/$FQDN/fullchain.pem -keystore ~/$HOSTNAME.jks
 #copy files to common folder
 sudo mkdir /opt/tak/certs/letsencrypt
 sudo cp ~/$HOSTNAME.jks /opt/tak/certs/letsencrypt
