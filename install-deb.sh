@@ -53,7 +53,9 @@ while [[ $SUCCESS == false ]]; do
     read RETRY
 
     if [[ $RETRY == "n" ]]; then
-      break
+      echo "Quitting Install Script..."
+      sleep 2
+      exit
     else
       echo "Please enter the FILE_ID again:"
       echo "(Right click > Get Link > Allow Sharing to anyone with link > Open share link > 'https://drive.google.com/file/d/<YOUR_FILE_ID_IS_HERE>/view?usp=sharing')"
