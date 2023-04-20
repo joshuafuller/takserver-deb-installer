@@ -392,51 +392,16 @@ fi
 
 
 
+#Install the DEB
+RETRY_LIMIT=5
 
-
-#login as tak user and install there
-
-
-while true; do
-
-echo "Login in as tak user to install TakServer..."
-echo "Password is $takpass"
-
-su - tak <<EOF
-        echo "------------ INSTALLING TAK SERVER DEB -----------------"
-
-        RETRY_LIMIT=5
-
-        for ((i=1;i<=RETRY_LIMIT;i++)); do
-            sudo apt install /tmp/takserver-deb-installer/$FILE_NAME -y && break
-            echo "Retry $i: Failed to install the package. Retrying in 5 seconds..."
-            sleep 5
-        done
-EOF
-    if [ -d "/opt/tak/certs" ]; then
-        # Path exists, continue with the script
-        break
-    fi
-
-    if [ "$retry_count" -ge "$RETRY_LIMIT" ]; then
-        # Retry limit reached, exit the script
-        echo "Error: /opt/tak/certs directory not found after $RETRY_LIMIT retries, exiting..."
-        exit 1
-    fi
-
-    # Path not found, prompt for retry
-    echo "Error: /opt/tak/certs directory not found (retry count: $retry_count)"
-    read -p "Do you want to retry running the installer? [y/N] " retry
-
-    if [[ "$retry" =~ ^[Yy]$ ]]; then
-        # Increment retry count and continue to the next iteration of the loop
-        ((retry_count++))
-        continue
-    else
-        # User chose not to retry, exit the script
-        exit 1
-    fi
+for ((i=1;i<=RETRY_LIMIT;i++)); do
+    sudo apt install /tmp/takserver-deb-installer/$FILE_NAME -y && break
+    echo "Retry $i: Failed to install the package. Retrying in 5 seconds..."
+    sleep 5
 done
+
+sudo chown -R tak:tak /opt/tak
 
 
 echo "Done installing Takserver, setting cert-metadata values..."
@@ -480,39 +445,16 @@ else
 fi
 
 
-# Define the characters to include in the random string
-chars='!@#%^*()_+abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-
-# Get the length of the string to generate 
-length=15
-
-# Generate a random pw for admin account
-has_upper=false
-has_lower=false
-has_digit=false
-has_special=false
-
-while [[ "$has_upper" != true || "$has_lower" != true || "$has_digit" != true || "$has_special" != true ]]; do
-    adminpass=$(head /dev/urandom | tr -dc "$chars" | head -c "$length")
-    for (( i=0; i<${#adminpass}; i++ )); do
-        char="${adminpass:i:1}"
-        if [[ "$char" =~ [A-Z] ]]; then
-            has_upper=true
-        elif [[ "$char" =~ [a-z] ]]; then
-            has_lower=true
-        elif [[ "$char" =~ [0-9] ]]; then
-            has_digit=true
-        elif [[ "$char" =~ [!@#%^*()_+] ]]; then
-            has_special=true
-        fi
-    done
-done
-
-# Output the generated password
-echo "Generated admin password: $adminpass"
 
 #Setup the DB
 sudo /opt/tak/db-utils/takserver-setup-db.sh
+
+#edit the service to run as tak user
+# Get the path to the service file
+SERVICE_FILE=$(systemctl cat takserver | grep -E "^SourcePath=" | awk -F "=" '{print $2}')
+
+# Add the User directive to the service file
+sudo sed -i "s/^\[Service\]$/&\nUser=$takuser/" "$SERVICE_FILE"
 
 sudo systemctl daemon-reload
 
