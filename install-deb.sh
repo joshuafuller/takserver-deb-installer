@@ -596,8 +596,6 @@ do
 			cd /opt/tak/certs && ./makeCert.sh client admin	
 			if [ $? -eq 0 ];
 			then
-				# Set permissions so user can write to certs/files
-				sudo chown -R $USER:$USER /opt/tak/certs/
 				break
 			else 
 				sleep 5
