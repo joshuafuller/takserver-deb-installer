@@ -483,6 +483,14 @@ fi
 #Setup the DB
 sudo /opt/tak/db-utils/takserver-setup-db.sh
 
+sudo systemctl daemon-reload
+
+sudo systemctl start takserver
+
+#wait for 30seconds so takserver can launch
+echo "Waiting 30 seconds for Tak Server to Load...."
+sleep 30
+
 #edit the service to run as tak user
 # Get the path to the service file
 SERVICE_FILE=$(systemctl cat takserver | grep -E "^SourcePath=" | awk -F "=" '{print $2}')
@@ -491,12 +499,6 @@ SERVICE_FILE=$(systemctl cat takserver | grep -E "^SourcePath=" | awk -F "=" '{p
 sudo sed -i "s/^\[Service\]$/&\nUser=$takuser/" "$SERVICE_FILE"
 
 sudo systemctl daemon-reload
-
-sudo systemctl start takserver
-
-#wait for 30seconds so takserver can launch
-echo "Waiting 30 seconds for Tak Server to Load...."
-sleep 30
 
 clear
 
