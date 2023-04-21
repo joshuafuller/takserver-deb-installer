@@ -22,7 +22,9 @@ Open a new SSH terminal, and fire this command to remove the apt upgrade lock - 
 *** If you are setting up a FQDN for SSL, make sure you already have your DNS entry (A Record) setup to point your server IP to the domain name you want the server hosted at. ***
 
 ## Second:
-Run install script for .deb package of tak server
+
+- Login as root user to your install target machine
+- Download and Run the install script with the command below
 
 ```cd /tmp/ && git clone https://github.com/atakhq/takserver-deb-installer.git && cd ./takserver-deb-installer && sudo chmod +x install-deb.sh && ./install-deb.sh```
 
