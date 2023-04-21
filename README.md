@@ -1,16 +1,5 @@
 # takserver-deb-installer
 
-## Notes:
-
-If you encounter this error: 
-
-```Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process XXXXXX (unattended-upgr) ```
-
-Open a new SSH terminal, and fire this command to remove the apt upgrade lock - REPLACE XXXXXX with the process ID shown in the error
-
-```sudo kill -9 XXXXXX```
-
-
 ## First:
 - Download the .deb installer from tak.gov
 - Upload to Google Drive
@@ -39,6 +28,15 @@ Open a new SSH terminal, and fire this command to remove the apt upgrade lock - 
 - Link to admin login with random gen password when script is done
 
 ## Notes:
+
+If you encounter this error: 
+
+```Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process XXXXXX (unattended-upgr) ```
+
+Open a new SSH terminal, and fire this command to remove the apt upgrade lock - REPLACE XXXXXX with the process ID shown in the error
+
+```sudo kill -9 XXXXXX```
+
 - 4/19/2023
   - FQDN SSL issue was fixed
   - rtsp-simple-server installer prompt added
