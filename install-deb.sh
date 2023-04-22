@@ -761,6 +761,8 @@ echo " "
 echo " "
 	echo "********************************************************************"
 if [ "$HAS_FQDNSSL" = "1" ]; then
+	#Save ITAK QR png to /opt/tak/certs/files
+	echo '$HOSTNAME,$FQDN,8089,SSL' | qrencode -s 10 -o /opt/tak/certs/files/itak-server-qr.png
 	echo " "
 	echo " System User tak password: $takpass                               "
 	echo ""
@@ -775,6 +777,7 @@ if [ "$HAS_FQDNSSL" = "1" ]; then
 	echo "You should now be able to authenticate ITAK and ATAK clients using only user/password and server URL."
 	echo " "
 	echo "~~~ SCAN QR CODE BELOW INSIDE ITAK TO SETUP SERVER CONNECTION ~~~ "
+	echo "(There is also a copy of this image saved at /opt/tak/certs/files/itak-server-qr.png)"
 	
 	echo '$HOSTNAME,$FQDN,8089,SSL' | qrencode -t UTF8
 
