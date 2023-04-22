@@ -27,6 +27,9 @@
 - Optional: Configure FQDN for seamless cert enrollment and no SSL warnings in browser
 - Link to admin login with random gen password when script is done
 
+![Example Install Complete image](https://raw.githubusercontent.com/atakhq/takserver-deb-installer/master/deb-installer-done1.png)
+
+
 ## Notes:
 
 If you encounter this error: 
