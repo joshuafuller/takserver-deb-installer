@@ -552,7 +552,7 @@ fi
 
 
 sudo openssl pkcs12 -export -in /etc/letsencrypt/live/$FQDN/fullchain.pem -inkey /etc/letsencrypt/live/$FQDN/privkey.pem -name $HOSTNAME -out ~/$HOSTNAME.p12 -passout pass:atakatak
-#sudo apt install openjdk-16-jre-headless -y
+sudo apt install openjdk-16-jre-headless -y
 echo ""
 read -p "If asked to save file becuase an existing copy exists, reply Y. Press any key to resume setup..."
 echo ""
@@ -566,38 +566,10 @@ sudo cp ~/$HOSTNAME.jks /opt/tak/certs/letsencrypt
 sudo cp ~/$HOSTNAME.p12 /opt/tak/certs/letsencrypt
 sudo chown tak:tak -R /opt/tak/certs/letsencrypt
 
-#Add new Config line
-
-max_retries=5
-retry_interval=10 # seconds
-retry_count=0
-
-while [[ $retry_count -lt $max_retries ]]
-do
-	# Set the filename
-	filename="/opt/tak/CoreConfig.xml"
-	search='<connector port=\"8446\" clientAuth=\"false\" _name=\"cert_https\"/>'
-	replace='<connector port=\"8446\" clientAuth=\"false\" _name=\"cert_https\" truststorePass=\"atakatak\" truststoreFile=\"certs/files/truststore-intermediate-CA.jks\" truststore=\"JKS\" keystorePass=\"atakatak\" keystoreFile=\"certs/letsencrypt/'"$HOSTNAME"'.jks\" keystore=\"JKS\"/>'
-	sed -i "s@$search@$replace@g" $filename
-  
-  if [[ $? -eq 0 ]]; then
-    # Success
-    break
-  else
-    # Retry after interval
-    sleep $retry_interval
-    retry_count=$((retry_count+1))
-  fi
-done
-
-if [[ $retry_count -eq $max_retries ]]; then
-  echo "Failed to update CoreConfig.xml after $retry_count retries"
-  exit 1
-fi
 
 
 #echo "Making sure correct java version is set, since we had to install 16 to run this"
-#sudo update-alternatives --set java /usr/lib/jvm/java-11-openjdk-amd64/bin/java
+sudo update-alternatives --set java /usr/lib/jvm/java-11-openjdk-amd64/bin/java
 HAS_FQDNSSL=1
 else
   HAS_FQDNSSL=0
@@ -689,6 +661,38 @@ retry_count=0
 
 while [[ $retry_count -lt $max_retries ]]
 do
+
+	if [ "$HAS_FQDNSSL" = "1" ]; then
+
+		#Add new Config line
+
+		max_retries=5
+		retry_interval=10 # seconds
+		retry_count=0
+
+		while [[ $retry_count -lt $max_retries ]]
+		do
+			# Set the filename
+			filename="/opt/tak/CoreConfig.xml"
+			search='<connector port=\"8446\" clientAuth=\"false\" _name=\"cert_https\"/>'
+			replace='<connector port=\"8446\" clientAuth=\"false\" _name=\"cert_https\" truststorePass=\"atakatak\" truststoreFile=\"certs/files/truststore-intermediate-CA.jks\" truststore=\"JKS\" keystorePass=\"atakatak\" keystoreFile=\"certs/letsencrypt/'"$HOSTNAME"'.jks\" keystore=\"JKS\"/>'
+			sed -i "s@$search@$replace@g" $filename
+
+		  if [[ $? -eq 0 ]]; then
+		    # Success
+		    break
+		  else
+		    # Retry after interval
+		    sleep $retry_interval
+		    retry_count=$((retry_count+1))
+		  fi
+		done
+
+		if [[ $retry_count -eq $max_retries ]]; then
+		  echo "Failed to update CoreConfig.xml after $retry_count retries"
+		  exit 1
+		fi
+	fi
 
 	# Remove unsecure ports in core config
 	coreconfig_path="/opt/tak/CoreConfig.xml"
