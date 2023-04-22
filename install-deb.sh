@@ -610,13 +610,14 @@ if [ -d "/opt/tak/certs" ]; then
     if [ -x "/opt/tak/certs/makeRootCa.sh" ]; then
         #echo "Script exists and is executable"
     else
-        echo " Cert Setup Script exists but is not executable, are you running this as root?"
-	read -n 1 -s -r -p "Press any key to exit...."
+        echo "Cert Setup Script exists but is not executable, are you running this as root?"
+        read -n 1 -s -r -p "Press any key to exit...."
+        exit 1
     fi
 else
     echo "/opt/tak/certs Path does not exist, cannot finish install"
     read -n 1 -s -r -p "Press any key to exit...."
-    
+    exit 1
 fi
 
 
