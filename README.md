@@ -37,6 +37,10 @@ Open a new SSH terminal, and fire this command to remove the apt upgrade lock - 
 
 ```sudo kill -9 XXXXXX```
 
+- 4/22/2023
+  - Error trapping for dependency installs, tak server isntall, and user execution permission of the scripts
+  - General improvements to speed up the install
+
 - 4/19/2023
   - FQDN SSL issue was fixed
   - rtsp-simple-server installer prompt added
