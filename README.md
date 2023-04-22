@@ -38,6 +38,7 @@ Open a new SSH terminal, and fire this command to remove the apt upgrade lock - 
 ```sudo kill -9 XXXXXX```
 
 - 4/22/2023
+  - Added ITAK Server Auto-Setup QR Code to end of script, and png saved to /opt/tak/certs/files
   - Error trapping for dependency installs, tak server isntall, and user execution permission of the scripts
   - General improvements to speed up the install
 
@@ -47,5 +48,4 @@ Open a new SSH terminal, and fire this command to remove the apt upgrade lock - 
 
 ## To Do:
 - UFW
-- ITAK QR Codes
 
