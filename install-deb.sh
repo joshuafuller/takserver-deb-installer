@@ -22,6 +22,32 @@ fi
 NIC=$(route | grep default | awk '{print $8}')
 IP=$(ip addr show $NIC | grep -m 1 "inet " | awk '{print $2}' | cut -d "/" -f1)
 
+if [ $(dpkg-query -W -f='${Status}' curl 2>/dev/null | grep -c "ok installed") -eq 0 ];
+then
+  echo "curl is not installed, installing now..."
+  sudo apt-get install curl -y
+else
+  echo ""
+fi
+
+#import postgres repo
+curl -fSsL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor | sudo tee /usr/share/keyrings/postgresql.gpg > /dev/null
+
+#import stable build
+#20.04
+echo deb [arch=amd64,arm64,ppc64el signed-by=/usr/share/keyrings/postgresql.gpg] http://apt.postgresql.org/pub/repos/apt/ focal-pgdg main | sudo tee -a /etc/apt/sources.list.d/postgresql.list
+
+sudo apt-get update -y
+
+#Install Deps
+sudo apt-get install postgresql-client-15 postgresql-15 postgresql-15-postgis-3 unzip zip wget git nano openssl net-tools dirmngr ca-certificates software-properties-common gnupg gnupg2 apt-transport-https curl openjdk-11-jdk -y
+
+if [ $? -ne 0 ]; then
+	echo "Error installing dependencies...."
+	read -n 1 -s -r -p "Press any key to exit...."
+	exit 1
+fi
+
 
 echo "*****************************************"
 echo "Import DEB using Google Drive"
@@ -147,17 +173,6 @@ echo "$takuser:$password" | chpasswd
 #adduser $takuser
 usermod -aG sudo $takuser
 
-#import postgres repo
-curl -fSsL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor | sudo tee /usr/share/keyrings/postgresql.gpg > /dev/null
-
-#import stable build
-#20.04
-echo deb [arch=amd64,arm64,ppc64el signed-by=/usr/share/keyrings/postgresql.gpg] http://apt.postgresql.org/pub/repos/apt/ focal-pgdg main | sudo tee -a /etc/apt/sources.list.d/postgresql.list
-
-sudo apt-get update -y
-
-#Install Deps
-sudo apt-get install postgresql-client-15 postgresql-15 postgresql-15-postgis-3 unzip zip wget git nano openssl net-tools dirmngr ca-certificates software-properties-common gnupg gnupg2 apt-transport-https curl openjdk-11-jdk -y
 
 
 clear
@@ -168,8 +183,6 @@ if [[ $response =~ ^[Yy]$ ]]; then
 
 echo "Installing simple-rtsp-server - for use with TAK Server"
 echo " "
-
-sudo apt-get install wget -y
 
 wget https://github.com/aler9/rtsp-simple-server/releases/download/v0.17.13/rtsp-simple-server_v0.17.13_linux_amd64.tar.gz
 
@@ -589,6 +602,21 @@ HAS_FQDNSSL=1
 else
   HAS_FQDNSSL=0
   echo "skipping FQDN setup..."
+fi
+
+#some people are getting errors here, adding more error trapping
+if [ -d "/opt/tak/certs" ]; then
+    #echo "Path exists"
+    if [ -x "/opt/tak/certs/makeRootCa.sh" ]; then
+        #echo "Script exists and is executable"
+    else
+        echo " Cert Setup Script exists but is not executable, are you running this as root?"
+	read -n 1 -s -r -p "Press any key to exit...."
+    fi
+else
+    echo "/opt/tak/certs Path does not exist, cannot finish install"
+    read -n 1 -s -r -p "Press any key to exit...."
+    
 fi
 
 
