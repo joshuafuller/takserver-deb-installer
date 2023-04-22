@@ -40,7 +40,7 @@ echo deb [arch=amd64,arm64,ppc64el signed-by=/usr/share/keyrings/postgresql.gpg]
 sudo apt-get update -y
 
 #Install Deps
-sudo apt-get install postgresql-client-15 postgresql-15 postgresql-15-postgis-3 unzip zip wget git nano openssl net-tools dirmngr ca-certificates software-properties-common gnupg gnupg2 apt-transport-https curl openjdk-11-jdk -y
+sudo apt-get install postgresql-client-15 postgresql-15 postgresql-15-postgis-3 unzip zip wget git nano qrencode openssl net-tools dirmngr ca-certificates software-properties-common gnupg gnupg2 apt-transport-https curl openjdk-11-jdk -y
 
 if [ $? -ne 0 ]; then
 	echo "Error installing dependencies...."
@@ -552,7 +552,7 @@ fi
 
 
 sudo openssl pkcs12 -export -in /etc/letsencrypt/live/$FQDN/fullchain.pem -inkey /etc/letsencrypt/live/$FQDN/privkey.pem -name $HOSTNAME -out ~/$HOSTNAME.p12 -passout pass:atakatak
-sudo apt install openjdk-16-jre-headless -y
+#sudo apt install openjdk-16-jre-headless -y
 echo ""
 read -p "If asked to save file becuase an existing copy exists, reply Y. Press any key to resume setup..."
 echo ""
@@ -596,8 +596,8 @@ if [[ $retry_count -eq $max_retries ]]; then
 fi
 
 
-echo "Making sure correct java version is set, since we had to install 16 to run this"
-sudo update-alternatives --set java /usr/lib/jvm/java-11-openjdk-amd64/bin/java
+#echo "Making sure correct java version is set, since we had to install 16 to run this"
+#sudo update-alternatives --set java /usr/lib/jvm/java-11-openjdk-amd64/bin/java
 HAS_FQDNSSL=1
 else
   HAS_FQDNSSL=0
@@ -754,18 +754,25 @@ sudo systemctl restart takserver
 sudo systemctl enable takserver
 
 echo " "
-echo "********************************************************************"
+echo " "
+	echo "********************************************************************"
 if [ "$HAS_FQDNSSL" = "1" ]; then
+	echo " "
+	echo " System User tak password: $takpass                               "
 	echo ""
 	echo " Web portal user: admin                                           "
 	echo " Web portal password: $adminpass                                  "
-	echo " System User tak password: $takpass                               "
 	echo ""
-	echo "You should now be able to authenticate ITAK and ATAK clients using only user/password and server URL."
+	echo "Server Address (IP): https://$IP:8089 SSL"
+	echo "Server Address(FQDN): https://$FQDN:8089 SSL"
 	echo ""
-	echo "Server Address: https://$FQDN:8089 SSL"
 	echo "Create new users here: https://$FQDN:8446/user-management/index.html#!/"
-	echo "                                                                  "
+	echo "     "     
+	echo "You should now be able to authenticate ITAK and ATAK clients using only user/password and server URL."
+	echo " "
+	echo "~~~ SCAN QR CODE BELOW INSIDE ITAK TO SETUP SERVER CONNECTION ~~~ "
+	
+	echo '$HOSTNAME,$FQDN,8089,SSL' | qrencode -t UTF8
 
 else
 	echo " Login at https://$IP:8446 with your admin account                "
