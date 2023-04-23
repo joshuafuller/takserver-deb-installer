@@ -819,7 +819,7 @@ else
 	echo ""
 	echo "Server Address (IP): https://$IP:8446 SSL"
 	echo ""
-	echo "Create new users here: https://$FQDN:8446/user-management/index.html#!/"
+	echo "Create new users here: https://$IP:8446/user-management/index.html#!/"
 	echo ""
 	echo "********************************************************************"
 	echo "=====================CERTIFICATE INFORMATION========================"
