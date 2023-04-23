@@ -935,7 +935,7 @@ else
 	echo ""
 fi
 
-if [ "HASUSERS" = "1" ]; then
+if [ "$HASUSERS" = "1" ]; then
 echo ""
 echo "****** Created $CLIENT_COUNT Additonal User Connection packages *****"
 echo "DataPackage Zip Files located in: /opt/tak/certs/files/clients"
