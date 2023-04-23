@@ -451,9 +451,10 @@ sudo chown -R tak:tak /opt/tak
 
 clear
 
-echo "Done installing Takserver, setting cert-metadata values..."
-
-#Need to build CoreConfig.xml and put it into /opt/tak/CoreConfig.xml so next script uses it
+echo "*************Done installing Takserver**************"
+if [[ $FILE_NAME == *"4.8"* ]]; then
+  
+  #Need to build CoreConfig.xml and put it into /opt/tak/CoreConfig.xml so next script uses it
 
 echo "SSL Configuration: Hit enter (x3) to accept the defaults:"
 
@@ -495,6 +496,10 @@ fi
 
 #Setup the DB
 sudo /opt/tak/db-utils/takserver-setup-db.sh
+  
+  
+fi
+
 
 sudo systemctl daemon-reload
 
