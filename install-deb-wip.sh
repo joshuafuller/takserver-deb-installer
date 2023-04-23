@@ -661,7 +661,6 @@ cd /opt/tak/certs/
 mkdir /opt/tak/certs/files/clients
 
 
-while true; do
 
 TRUSTSTORE="truststore-intermediate-CA.p12"
 
@@ -746,11 +745,7 @@ rm server.p12
 rm manifest.xml 
 rm taky-server.pref
 
-done 
-fi
-else
-echo "Skipping additional user connection package creation..."
-HASUSERS=0
+
 fi
 
 
