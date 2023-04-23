@@ -40,6 +40,9 @@ Open a new SSH terminal, and fire this command to remove the apt upgrade lock - 
 
 ```sudo kill -9 XXXXXX```
 
+- 4/23/2023
+  - Added support for TAK Server 4.9 (some minor changes)
+
 - 4/22/2023
   - Added ITAK Server Auto-Setup QR Code to end of script, and png saved to /opt/tak/certs/files
   - Error trapping for dependency installs, tak server isntall, and user execution permission of the scripts
