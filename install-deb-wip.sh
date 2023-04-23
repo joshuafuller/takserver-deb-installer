@@ -22,6 +22,32 @@ fi
 NIC=$(route | grep default | awk '{print $8}')
 IP=$(ip addr show $NIC | grep -m 1 "inet " | awk '{print $2}' | cut -d "/" -f1)
 
+if [ $(dpkg-query -W -f='${Status}' curl 2>/dev/null | grep -c "ok installed") -eq 0 ];
+then
+  echo "curl is not installed, installing now..."
+  sudo apt-get install curl -y
+else
+  echo ""
+fi
+
+#import postgres repo
+curl -fSsL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor | sudo tee /usr/share/keyrings/postgresql.gpg > /dev/null
+
+#import stable build
+#20.04
+echo deb [arch=amd64,arm64,ppc64el signed-by=/usr/share/keyrings/postgresql.gpg] http://apt.postgresql.org/pub/repos/apt/ focal-pgdg main | sudo tee -a /etc/apt/sources.list.d/postgresql.list
+
+sudo apt-get update -y
+
+#Install Deps
+sudo apt-get install postgresql-client-15 postgresql-15 postgresql-15-postgis-3 unzip zip wget git nano qrencode openssl net-tools dirmngr ca-certificates software-properties-common gnupg gnupg2 apt-transport-https curl openjdk-11-jdk -y
+
+if [ $? -ne 0 ]; then
+	echo "Error installing dependencies...."
+	read -n 1 -s -r -p "Press any key to exit...."
+	exit 1
+fi
+
 
 echo "*****************************************"
 echo "Import DEB using Google Drive"
@@ -39,9 +65,32 @@ if [[ -z $FILE_NAME ]]; then
   FILE_NAME="takserver_4.8-RELEASE45_all.deb"
 fi
 
-sudo wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=$FILE_ID' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p'
-sudo wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=t&id=$FILE_ID" -O $FILE_NAME
-sudo rm -rf /tmp/cookies.txt
+SUCCESS=false
+while [[ $SUCCESS == false ]]; do
+  sudo wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=$FILE_ID' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p'
+  sudo wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=t&id=$FILE_ID" -O $FILE_NAME
+  sudo rm -rf /tmp/cookies.txt
+
+  if [[ -f $FILE_NAME && -s $FILE_NAME ]]; then
+    echo "DEB File found!"
+    SUCCESS=true
+  else
+    echo "Download failed. Would you like to retry? (y/n)"
+    read RETRY
+
+    if [[ $RETRY == "n" ]]; then
+      echo "Quitting Install Script..."
+      sleep 2
+      exit
+    else
+      echo "Please enter the FILE_ID again:"
+      echo "(Right click > Get Link > Allow Sharing to anyone with link > Open share link > 'https://drive.google.com/file/d/<YOUR_FILE_ID_IS_HERE>/view?usp=sharing')"
+      echo ""
+      read FILE_ID
+    fi
+  fi
+done
+
 
 
 # Define the characters to include in the random string
@@ -75,6 +124,39 @@ done
 # Output the generated password
 echo "Generated tak password: $takpass"
 
+# Define the characters to include in the random string
+chars='!@#%^*()_+abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+
+# Get the length of the string to generate 
+length=15
+
+# Generate a random pw for admin account
+has_upper=false
+has_lower=false
+has_digit=false
+has_special=false
+
+while [[ "$has_upper" != true || "$has_lower" != true || "$has_digit" != true || "$has_special" != true ]]; do
+    adminpass=$(head /dev/urandom | tr -dc "$chars" | head -c "$length")
+    for (( i=0; i<${#adminpass}; i++ )); do
+        char="${adminpass:i:1}"
+        if [[ "$char" =~ [A-Z] ]]; then
+            has_upper=true
+        elif [[ "$char" =~ [a-z] ]]; then
+            has_lower=true
+        elif [[ "$char" =~ [0-9] ]]; then
+            has_digit=true
+        elif [[ "$char" =~ [!@#%^*()_+] ]]; then
+            has_special=true
+        fi
+    done
+done
+
+# Output the generated password
+echo "Generated admin web-portal password: $adminpass"
+
+
+
 #create tak user to run the service under
 takuser="tak"
 
@@ -91,21 +173,7 @@ echo "$takuser:$password" | chpasswd
 #adduser $takuser
 usermod -aG sudo $takuser
 
-sudo apt-get update -y
 
-#Install Deps
-sudo apt-get install unzip zip wget git nano openssl net-tools dirmngr ca-certificates software-properties-common gnupg gnupg2 apt-transport-https curl openjdk-11-jdk -y
-
-#import postgres repo
-curl -fSsL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor | sudo tee /usr/share/keyrings/postgresql.gpg > /dev/null
-
-#import stable build
-#20.04
-echo deb [arch=amd64,arm64,ppc64el signed-by=/usr/share/keyrings/postgresql.gpg] http://apt.postgresql.org/pub/repos/apt/ focal-pgdg main | sudo tee -a /etc/apt/sources.list.d/postgresql.list
-
-#install postgresql
-sudo apt-get update
-sudo apt install postgresql-client-15 postgresql-15 postgresql-15-postgis-3 -y
 
 clear
 
@@ -115,8 +183,6 @@ if [[ $response =~ ^[Yy]$ ]]; then
 
 echo "Installing simple-rtsp-server - for use with TAK Server"
 echo " "
-
-sudo apt-get install wget -y
 
 wget https://github.com/aler9/rtsp-simple-server/releases/download/v0.17.13/rtsp-simple-server_v0.17.13_linux_amd64.tar.gz
 
@@ -369,16 +435,18 @@ fi
 
 
 
+#Install the DEB
+RETRY_LIMIT=5
 
+for ((i=1;i<=RETRY_LIMIT;i++)); do
+    sudo apt install /tmp/takserver-deb-installer/$FILE_NAME -y && break
+    echo "Retry $i: Failed to install the package. Retrying in 5 seconds..."
+    sleep 5
+done
 
-#login as tak user and install there
-echo "Logging in as tak user to install TakServer..."
-echo "Password is $takpass"
-su - tak <<EOF
-#install the DEB
-sudo apt install /tmp/takserver-deb-installer/$FILE_NAME -y
+sudo chown -R tak:tak /opt/tak
+
 clear
-EOF
 
 echo "Done installing Takserver, setting cert-metadata values..."
 
@@ -421,36 +489,6 @@ else
 fi
 
 
-# Define the characters to include in the random string
-chars='!@#%^*()_+abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-
-# Get the length of the string to generate 
-length=15
-
-# Generate a random pw for admin account
-has_upper=false
-has_lower=false
-has_digit=false
-has_special=false
-
-while [[ "$has_upper" != true || "$has_lower" != true || "$has_digit" != true || "$has_special" != true ]]; do
-    adminpass=$(head /dev/urandom | tr -dc "$chars" | head -c "$length")
-    for (( i=0; i<${#adminpass}; i++ )); do
-        char="${adminpass:i:1}"
-        if [[ "$char" =~ [A-Z] ]]; then
-            has_upper=true
-        elif [[ "$char" =~ [a-z] ]]; then
-            has_lower=true
-        elif [[ "$char" =~ [0-9] ]]; then
-            has_digit=true
-        elif [[ "$char" =~ [!@#%^*()_+] ]]; then
-            has_special=true
-        fi
-    done
-done
-
-# Output the generated password
-echo "Generated admin password: $adminpass"
 
 #Setup the DB
 sudo /opt/tak/db-utils/takserver-setup-db.sh
@@ -462,6 +500,15 @@ sudo systemctl start takserver
 #wait for 30seconds so takserver can launch
 echo "Waiting 30 seconds for Tak Server to Load...."
 sleep 30
+
+#edit the service to run as tak user
+# Get the path to the service file
+#SERVICE_FILE=$(systemctl cat takserver | grep -E "^SourcePath=" | awk -F "=" '{print $2}')
+
+# Add the User directive to the service file
+#sudo sed -i "s/^\[Service\]$/&\nUser=$takuser/" "$SERVICE_FILE"
+
+#sudo systemctl daemon-reload
 
 clear
 
@@ -512,49 +559,34 @@ echo ""
 read -p "If prompted for password, use 'atakatak' Press any key to resume setup..."
 echo ""
 sudo keytool -importkeystore -deststorepass atakatak -srcstorepass atakatak -destkeystore ~/$HOSTNAME.jks -srckeystore ~/$HOSTNAME.p12 -srcstoretype PKCS12
-sudo keytool -import -alias bundle -trustcacerts -srcstorepass atakatak -file /etc/letsencrypt/live/$FQDN/fullchain.pem -keystore ~/$HOSTNAME.jks
+sudo keytool -import -alias bundle -trustcacerts -deststorepass atakatak -srcstorepass atakatak -file /etc/letsencrypt/live/$FQDN/fullchain.pem -keystore ~/$HOSTNAME.jks
 #copy files to common folder
 sudo mkdir /opt/tak/certs/letsencrypt
 sudo cp ~/$HOSTNAME.jks /opt/tak/certs/letsencrypt
 sudo cp ~/$HOSTNAME.p12 /opt/tak/certs/letsencrypt
 sudo chown tak:tak -R /opt/tak/certs/letsencrypt
 
-#Add new Config line
-
-max_retries=5
-retry_interval=10 # seconds
-retry_count=0
-
-while [[ $retry_count -lt $max_retries ]]
-do
-	# Set the filename
-	filename="/opt/tak/CoreConfig.xml"
-	search='<connector port=\"8446\" clientAuth=\"false\" _name=\"cert_https\"/>'
-	replace='<connector port=\"8446\" clientAuth=\"false\" _name=\"cert_https\" truststorePass=\"atakatak\" truststoreFile=\"certs/files/truststore-intermediate-CA.jks\" truststore=\"JKS\" keystorePass=\"atakatak\" keystoreFile=\"certs/letsencrypt/'"$HOSTNAME"'.jks\" keystore=\"JKS\"/>'
-	sed -i "s@$search@$replace@g" $filename
-  
-  if [[ $? -eq 0 ]]; then
-    # Success
-    break
-  else
-    # Retry after interval
-    sleep $retry_interval
-    retry_count=$((retry_count+1))
-  fi
-done
-
-if [[ $retry_count -eq $max_retries ]]; then
-  echo "Failed to update CoreConfig.xml after $retry_count retries"
-  exit 1
-fi
 
 
-echo "Making sure correct java version is set, since we had to install 16 to run this"
+#echo "Making sure correct java version is set, since we had to install 16 to run this"
 sudo update-alternatives --set java /usr/lib/jvm/java-11-openjdk-amd64/bin/java
 HAS_FQDNSSL=1
 else
   HAS_FQDNSSL=0
   echo "skipping FQDN setup..."
+fi
+
+#some people are getting errors here, adding more error trapping
+if [ -d "/opt/tak/certs" ] && [ -x "/opt/tak/certs/makeRootCa.sh" ]; then
+    echo ""
+else
+    if [ ! -d "/opt/tak/certs" ]; then
+        echo "/opt/tak/certs Path does not exist, cannot finish install"
+    else
+        echo "Cert Setup Script exists but is not executable, are you running this as root?"
+    fi
+    read -n 1 -s -r -p "Press any key to exit...."
+    exit 1
 fi
 
 
@@ -594,8 +626,6 @@ do
 			cd /opt/tak/certs && ./makeCert.sh client admin	
 			if [ $? -eq 0 ];
 			then
-				# Set permissions so user can write to certs/files
-				sudo chown -R $USER:$USER /opt/tak/certs/
 				break
 			else 
 				sleep 5
@@ -631,6 +661,38 @@ retry_count=0
 
 while [[ $retry_count -lt $max_retries ]]
 do
+
+	if [ "$HAS_FQDNSSL" = "1" ]; then
+
+		#Add new Config line
+
+		max_retries=5
+		retry_interval=10 # seconds
+		retry_count=0
+
+		while [[ $retry_count -lt $max_retries ]]
+		do
+			# Set the filename
+			filename="/opt/tak/CoreConfig.xml"
+			search='<connector port=\"8446\" clientAuth=\"false\" _name=\"cert_https\"/>'
+			replace='<connector port=\"8446\" clientAuth=\"false\" _name=\"cert_https\" truststorePass=\"atakatak\" truststoreFile=\"certs/files/truststore-intermediate-CA.jks\" truststore=\"JKS\" keystorePass=\"atakatak\" keystoreFile=\"certs/letsencrypt/'"$HOSTNAME"'.jks\" keystore=\"JKS\"/>'
+			sed -i "s@$search@$replace@g" $filename
+
+		  if [[ $? -eq 0 ]]; then
+		    # Success
+		    break
+		  else
+		    # Retry after interval
+		    sleep $retry_interval
+		    retry_count=$((retry_count+1))
+		  fi
+		done
+
+		if [[ $retry_count -eq $max_retries ]]; then
+		  echo "Failed to update CoreConfig.xml after $retry_count retries"
+		  exit 1
+		fi
+	fi
 
 	# Remove unsecure ports in core config
 	coreconfig_path="/opt/tak/CoreConfig.xml"
@@ -696,18 +758,28 @@ sudo systemctl restart takserver
 sudo systemctl enable takserver
 
 echo " "
-echo "********************************************************************"
+echo " "
+	echo "********************************************************************"
 if [ "$HAS_FQDNSSL" = "1" ]; then
+	#Save ITAK QR png to /opt/tak/certs/files
+	echo '$HOSTNAME,$FQDN,8089,SSL' | qrencode -s 10 -o /opt/tak/certs/files/itak-server-qr.png
+	echo " "
+	echo " System User tak password: $takpass                               "
 	echo ""
 	echo " Web portal user: admin                                           "
 	echo " Web portal password: $adminpass                                  "
-	echo " System User tak password: $takpass                               "
 	echo ""
-	echo "You should now be able to authenticate ITAK and ATAK clients using only user/password and server URL."
+	echo "Server Address (IP): https://$IP:8089 SSL"
+	echo "Server Address(FQDN): https://$FQDN:8089 SSL"
 	echo ""
-	echo "Server Address: https://$FQDN:8089 SSL"
 	echo "Create new users here: https://$FQDN:8446/user-management/index.html#!/"
-	echo "                                                                  "
+	echo "     "     
+	echo "You should now be able to authenticate ITAK and ATAK clients using only user/password and server URL."
+	echo " "
+	echo "~~~ SCAN QR CODE BELOW INSIDE ITAK TO SETUP SERVER CONNECTION ~~~ "
+	echo "(There is also a copy of this image saved at /opt/tak/certs/files/itak-server-qr.png)"
+	
+	echo '$HOSTNAME,$FQDN,8089,SSL' | qrencode -t UTF8
 
 else
 	echo " Login at https://$IP:8446 with your admin account                "
