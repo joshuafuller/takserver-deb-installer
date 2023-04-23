@@ -815,8 +815,8 @@ do
 	
 	if [[ $FILE_NAME == *"4.9"* ]]; then
 	#remove this new extra line in 4.9
-	line='<input _name="stdssl" protocol="tls" port="8089" coreVersion="2"/>'
-	sudo sed -i "/$line/d" /opt/tak/CoreConfig.xml
+	  line='<input _name="stdssl" protocol="tls" port="8089" coreVersion="2"/>'
+	  sudo sed -i "#${line}#d" /opt/tak/CoreConfig.xml
 	fi
 
 
