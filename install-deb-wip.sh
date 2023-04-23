@@ -747,7 +747,7 @@ rm manifest.xml
 rm taky-server.pref
 
 done 
-
+fi
 else
 echo "Skipping additional user connection package creation..."
 HASUSERS=0
