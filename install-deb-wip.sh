@@ -48,9 +48,12 @@ if [ $? -ne 0 ]; then
 	exit 1
 fi
 
-
+clear
+echo ""
+echo "++++ DONE INSTALLING DEPENDENCIES ++++"
+echo ""
 echo "*****************************************"
-echo "Import DEB using Google Drive"
+echo "Import TAK Server DEB using Google Drive"
 echo "*****************************************"
 echo ""
 echo "WHAT IS YOUR FILE ID ON GOOGLE DRIVE?"
