@@ -746,6 +746,9 @@ rm manifest.xml
 rm taky-server.pref
 done
 
+clear
+echo "Done creating client connection packages..."
+
 fi
 
 
