@@ -720,6 +720,13 @@ do
 
 	#Add new conx type
 	sed -i '3 a\        <input _name="cassl" auth="x509" protocol="tls" port="8089" />' /opt/tak/CoreConfig.xml
+	
+	if [[ $FILE_NAME == *"4.9"* ]]; then
+	#remove this new extra line in 4.9
+	line='<input _name="stdssl" protocol="tls" port="8089" coreVersion="2"/>'
+	sudo sed -i "/$line/d" /opt/tak/CoreConfig.xml
+	fi
+
 
 	#Replace CA Config
 	# Set the filename
