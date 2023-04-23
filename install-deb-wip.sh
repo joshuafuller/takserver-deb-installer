@@ -531,16 +531,8 @@ echo ""
 echo "What is your hostname? ex: atakhq-com or tak-public-atakhq-com "
 echo "** Suggest using same value you entered for domain name but replace . with -"
 read HOSTNAME
-#request inital cert
 
-# Check for existing certificates
-EXISTING_CERTS=$(sudo certbot certificates)
-if [[ $EXISTING_CERTS =~ "Certificate Name: $DOMAIN" ]]; then
-  echo "Certificate found for $DOMAIN"
-  CERT_NAME=$(echo "$EXISTING_CERTS" | grep -oP "(?<=Certificate Name: ).*" | head -1)
-  echo "Using existing certificate: $CERT_NAME"
-else
-  echo "No existing certificates found for $DOMAIN"
+#request inital cert
   echo "Requesting a new certificate..."
   # Request a new certificate
   echo "What is your email? - Needed for Letsencrypt Alerts"
@@ -553,17 +545,14 @@ else
     echo "Error obtaining certificate: $(sudo certbot certificates)"
     exit 1
   fi
-fi
-
-
 
 sudo openssl pkcs12 -export -in /etc/letsencrypt/live/$FQDN/fullchain.pem -inkey /etc/letsencrypt/live/$FQDN/privkey.pem -name $HOSTNAME -out ~/$HOSTNAME.p12 -passout pass:atakatak
 sudo apt install openjdk-16-jre-headless -y
 echo ""
 read -p "If asked to save file becuase an existing copy exists, reply Y. Press any key to resume setup..."
 echo ""
-read -p "If prompted for password, use 'atakatak' Press any key to resume setup..."
-echo ""
+#read -p "If prompted for password, use 'atakatak' Press any key to resume setup..."
+#echo ""
 sudo keytool -importkeystore -deststorepass atakatak -srcstorepass atakatak -destkeystore ~/$HOSTNAME.jks -srckeystore ~/$HOSTNAME.p12 -srcstoretype PKCS12
 sudo keytool -import -alias bundle -trustcacerts -deststorepass atakatak -srcstorepass atakatak -file /etc/letsencrypt/live/$FQDN/fullchain.pem -keystore ~/$HOSTNAME.jks
 #copy files to common folder
@@ -581,6 +570,8 @@ else
   HAS_FQDNSSL=0
   echo "skipping FQDN setup..."
 fi
+
+
 
 #some people are getting errors here, adding more error trapping
 if [ -d "/opt/tak/certs" ] && [ -x "/opt/tak/certs/makeRootCa.sh" ]; then
@@ -658,6 +649,109 @@ do
 		fi
 	fi
 done
+
+
+#Do you want to create user certs now?
+read -p "Do you want to create additional connection packages for users? y or n " response
+if [[ $response =~ ^[Yy]$ ]]; then
+
+HASUSERS=1
+
+cd /opt/tak/certs/
+mkdir /opt/tak/certs/files/clients
+
+
+while true; do
+
+TRUSTSTORE="truststore-intermediate-CA.p12"
+
+
+#What port does server use?
+echo "What port does your TAK server use for COT Streaming?"
+echo "(Leave blank and hit enter to use default 8089)"
+read TAK_COT_PORT
+if [ -z "${TAK_COT_PORT}" ]; then 
+    TAK_COT_PORT='8089'
+else 
+    TAK_COT_PORT=${TAK_COT_PORT}
+fi
+
+#Make the Client Keys
+echo "How many clients do you want to configure?"
+read CLIENT_COUNT
+CLIENT_ARR=()
+for ((i=1; i<=$CLIENT_COUNT;i++))
+
+do
+    CLIENT_ARR+=($CLIENT_NAME)
+    echo ""
+    echo "************************************"
+    echo "What is the username for client #$i?"
+    echo "************************************"
+    echo ""
+    read CLIENT_NAME
+    
+    echo "Creating certs for $CLIENT_NAME"
+    ./makeCert.sh client tc-$CLIENT_NAME
+    
+    #Make a folder per user
+    mkdir /opt/tak/certs/files/clients/$CLIENT_NAME
+
+    #Copy over client certs
+    cp /opt/tak/certs/files/tc-$CLIENT_NAME.p12 /opt/tak/certs/files/clients/$CLIENT_NAME
+    #Iphone files setup
+    cp /opt/tak/certs/files/clients/$CLIENT_NAME/tc-$CLIENT_NAME.p12 /opt/tak/certs/files/clients/$CLIENT_NAME/iphone.p12
+    cp /opt/tak/certs/files/$TRUSTSTORE /opt/tak/certs/files/clients/$CLIENT_NAME
+    mv /opt/tak/certs/files/clients/$CLIENT_NAME/$TRUSTSTORE /opt/tak/certs/files/clients/$CLIENT_NAME/server.p12
+
+tee /opt/tak/certs/files/clients/$CLIENT_NAME/manifest.xml >/dev/null << EOF
+<MissionPackageManifest version="2">
+<Configuration>
+<Parameter name="uid" value="bcfaa4a5-2224-4095-bbe3-fdaa22a82741"/>
+<Parameter name="name" value="testbox_DP"/>
+<Parameter name="onReceiveDelete" value="true"/>
+</Configuration>
+<Contents>
+<Content ignore="false" zipEntry="certs\taky-server.pref"/>
+<Content ignore="false" zipEntry="certs\server.p12"/>
+<Content ignore="false" zipEntry="certs\iphone.p12"/>
+</Contents>
+</MissionPackageManifest>
+EOF
+
+
+tee /opt/tak/certs/files/clients/$CLIENT_NAME/taky-server.pref >/dev/null << EOF
+<?xml version='1.0' encoding='ASCII' standalone='yes'?>
+<preferences>
+  <preference version="1" name="cot_streams">
+    <entry key="count" class="class java.lang.Integer">1</entry>
+    <entry key="description0" class="class java.lang.String">ATAKHQ</entry>
+    <entry key="enabled0" class="class java.lang.Boolean">true</entry>
+    <entry key="connectString0" class="class java.lang.String">$IP:$TAK_COT_PORT:ssl</entry>
+  </preference>
+  <preference version="1" name="com.atakmap.app_preferences">
+    <entry key="displayServerConnectionWidget" class="class java.lang.Boolean">true</entry>
+    <entry key="caLocation" class="class java.lang.String">cert/server.p12</entry>
+    <entry key="caPassword" class="class java.lang.String">atakatak</entry>
+    <entry key="clientPassword" class="class java.lang.String">atakatak</entry>
+    <entry key="certificateLocation" class="class java.lang.String">cert/iphone.p12</entry>
+  </preference>
+</preferences>
+EOF
+
+cd /opt/tak/certs/files/clients/$CLIENT_NAME/
+zip itak.zip iphone.p12 server.p12 manifest.xml taky-server.pref
+rm iphone.p12 
+rm server.p12 
+rm manifest.xml 
+rm taky-server.pref
+
+done 
+
+else
+echo "Skipping additional user connection package creation..."
+HASUSERS=0
+fi
 
 
 
@@ -841,6 +935,12 @@ else
 	echo ""
 	echo "scp tak@111.222.333.444:/opt/tak/certs/files/truststore-intermediate-CA.p12 ~/Downloads"
 	echo ""
+fi
+
+if [ "HASUSERS" = "1" ]; then
+echo ""
+echo "****** Created $CLIENT_COUNT Additonal User Connection packages *****"
+echo "DataPackage Zip Files located in: /opt/tak/certs/files/clients"
 fi
 
 
