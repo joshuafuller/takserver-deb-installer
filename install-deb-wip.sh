@@ -453,8 +453,14 @@ clear
 
 echo "*************Done installing Takserver**************"
 if [[ $FILE_NAME == *"4.8"* ]]; then
+
+#Setup the DB -this is now automated in 4.8 during the deb install
+sudo /opt/tak/db-utils/takserver-setup-db.sh
   
-  #Need to build CoreConfig.xml and put it into /opt/tak/CoreConfig.xml so next script uses it
+  
+fi
+
+#Need to build CoreConfig.xml and put it into /opt/tak/CoreConfig.xml so next script uses it
 
 echo "SSL Configuration: Hit enter (x3) to accept the defaults:"
 
@@ -490,14 +496,6 @@ then
 else
 	# Default org unit to "ORG_UNIT"
 	sed -i 's/\${ORGANIZATIONAL_UNIT}/\${ORGANIZATIONAL_UNIT:-$orgunit}/g' "$CERTMETAPATH"
-fi
-
-
-
-#Setup the DB
-sudo /opt/tak/db-utils/takserver-setup-db.sh
-  
-  
 fi
 
 
