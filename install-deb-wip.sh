@@ -882,6 +882,12 @@ if [ "$HAS_FQDNSSL" = "1" ]; then
 	echo "********************************************************************"
 	echo "=======================CONNECTION HELP=============================="
 	echo "********************************************************************"
+	if [ "$HASUSERS" = "1" ]; then
+	echo ""
+	echo "$CLIENT_COUNT User Connection Packages Created:"
+	echo "Zip Files located in: /opt/tak/certs/files/clients"
+	echo ""
+	fi
 	echo "You should now be able to authenticate ITAK and ATAK clients using only user/password and server URL."
 	echo " "
 	echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
@@ -918,11 +924,17 @@ else
 	echo ""
 	echo "Server Address (IP): https://$IP:8446 SSL"
 	echo ""
+	if [ "$HASUSERS" = "1" ]; then
+	echo "$CLIENT_COUNT User Connection Packages Created:"
+	echo "Zip Files located in: /opt/tak/certs/files/clients"
+	echo ""
+	fi
 	echo "Create new users here: https://$IP:8446/user-management/index.html#!/"
 	echo ""
 	echo "********************************************************************"
 	echo "=====================CERTIFICATE INFORMATION========================"
 	echo "********************************************************************"
+	
 	echo ""
 	echo "Run the following command on your LOCAL machine to download the common cert"
 	echo ""
@@ -937,8 +949,8 @@ fi
 
 if [ "$HASUSERS" = "1" ]; then
 echo ""
-echo "****** Created $CLIENT_COUNT Additonal User Connection packages *****"
-echo "DataPackage Zip Files located in: /opt/tak/certs/files/clients"
+echo "$CLIENT_COUNT User Connection Packages Created:"
+echo "Zip Files located in: /opt/tak/certs/files/clients"
 fi
 
 
