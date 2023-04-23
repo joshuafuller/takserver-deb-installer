@@ -691,7 +691,7 @@ do
     read CLIENT_NAME
     
     echo "Creating certs for $CLIENT_NAME"
-    ./makeCert.sh client tc-$CLIENT_NAME
+    cd /opt/tak/certs && ./makeCert.sh client tc-$CLIENT_NAME
     
     #Make a folder per user
     mkdir /opt/tak/certs/files/clients/$CLIENT_NAME
@@ -744,7 +744,7 @@ rm iphone.p12
 rm server.p12 
 rm manifest.xml 
 rm taky-server.pref
-
+done
 
 fi
 
