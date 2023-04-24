@@ -31,7 +31,7 @@
 
 - Instruction at the end with link to admin login with random gen password
 
-![Example Install Complete image](https://raw.githubusercontent.com/atakhq/takserver-deb-installer/master/deb-installer-done.png)
+![Install Complete image](https://raw.githubusercontent.com/atakhq/takserver-deb-installer/master/deb-installer-done.png)
 
 
 ## Notes:
