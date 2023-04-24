@@ -24,10 +24,14 @@
 - installs takserver and enables the service to run at startup on reboots
 - disables insecure ports in CoreConfig.xml
 - configures certificate enrollment
-- Optional: Configure FQDN for seamless cert enrollment and no SSL warnings in browser
-- Link to admin login with random gen password when script is done
+- Optional: 
+    - Configure FQDN for seamless cert enrollment and no SSL warnings in browser
+    - Setup simple-rtsp-server for video streaming
+    - Additional user connection datapackage creation
 
-![Example Install Complete image](https://raw.githubusercontent.com/atakhq/takserver-deb-installer/master/deb-installer-done1.png)
+- Instruction at the end with link to admin login with random gen password
+
+![Example Install Complete image](https://raw.githubusercontent.com/atakhq/takserver-deb-installer/master/deb-installer-done.png)
 
 
 ## Notes:
@@ -42,6 +46,7 @@ Open a new SSH terminal, and fire this command to remove the apt upgrade lock - 
 
 - 4/23/2023
   - Added support for TAK Server 4.9 (some minor changes)
+  - Added prompt for additional user cert creation
 
 - 4/22/2023
   - Added ITAK Server Auto-Setup QR Code to end of script, and png saved to /opt/tak/certs/files
