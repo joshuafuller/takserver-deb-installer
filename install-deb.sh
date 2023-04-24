@@ -451,17 +451,19 @@ sudo chown -R tak:tak /opt/tak
 
 clear
 
-echo "*************Done installing Takserver**************"
+
 if [[ $FILE_NAME == *"4.8"* ]]; then
 
 #Setup the DB -this is now automated in 4.8 during the deb install
 sudo /opt/tak/db-utils/takserver-setup-db.sh
-  
-  
+clear
+
 fi
-
-#Need to build CoreConfig.xml and put it into /opt/tak/CoreConfig.xml so next script uses it
-
+echo "************* Done installing Takserver **************"
+echo ""
+echo "         *********** MAKING CERTS ************** "
+echo ""
+#Need to build CoreConfig.xml and put it into /opt/tak/CoreConfig.xml so next script uses it to make certs
 echo "SSL Configuration: Hit enter (x3) to accept the defaults:"
 
 read -p "State (for cert generation). Default [state] :" state
@@ -503,18 +505,11 @@ sudo systemctl daemon-reload
 
 sudo systemctl start takserver
 
+clear
+
 #wait for 30seconds so takserver can launch
 echo "Waiting 30 seconds for Tak Server to Load...."
 sleep 30
-
-#edit the service to run as tak user
-# Get the path to the service file
-#SERVICE_FILE=$(systemctl cat takserver | grep -E "^SourcePath=" | awk -F "=" '{print $2}')
-
-# Add the User directive to the service file
-#sudo sed -i "s/^\[Service\]$/&\nUser=$takuser/" "$SERVICE_FILE"
-
-#sudo systemctl daemon-reload
 
 clear
 
@@ -531,16 +526,8 @@ echo ""
 echo "What is your hostname? ex: atakhq-com or tak-public-atakhq-com "
 echo "** Suggest using same value you entered for domain name but replace . with -"
 read HOSTNAME
-#request inital cert
 
-# Check for existing certificates
-EXISTING_CERTS=$(sudo certbot certificates)
-if [[ $EXISTING_CERTS =~ "Certificate Name: $DOMAIN" ]]; then
-  echo "Certificate found for $DOMAIN"
-  CERT_NAME=$(echo "$EXISTING_CERTS" | grep -oP "(?<=Certificate Name: ).*" | head -1)
-  echo "Using existing certificate: $CERT_NAME"
-else
-  echo "No existing certificates found for $DOMAIN"
+#request inital cert
   echo "Requesting a new certificate..."
   # Request a new certificate
   echo "What is your email? - Needed for Letsencrypt Alerts"
@@ -553,17 +540,14 @@ else
     echo "Error obtaining certificate: $(sudo certbot certificates)"
     exit 1
   fi
-fi
-
-
 
 sudo openssl pkcs12 -export -in /etc/letsencrypt/live/$FQDN/fullchain.pem -inkey /etc/letsencrypt/live/$FQDN/privkey.pem -name $HOSTNAME -out ~/$HOSTNAME.p12 -passout pass:atakatak
 sudo apt install openjdk-16-jre-headless -y
 echo ""
 read -p "If asked to save file becuase an existing copy exists, reply Y. Press any key to resume setup..."
 echo ""
-read -p "If prompted for password, use 'atakatak' Press any key to resume setup..."
-echo ""
+#read -p "If prompted for password, use 'atakatak' Press any key to resume setup..."
+#echo ""
 sudo keytool -importkeystore -deststorepass atakatak -srcstorepass atakatak -destkeystore ~/$HOSTNAME.jks -srckeystore ~/$HOSTNAME.p12 -srcstoretype PKCS12
 sudo keytool -import -alias bundle -trustcacerts -deststorepass atakatak -srcstorepass atakatak -file /etc/letsencrypt/live/$FQDN/fullchain.pem -keystore ~/$HOSTNAME.jks
 #copy files to common folder
@@ -581,6 +565,8 @@ else
   HAS_FQDNSSL=0
   echo "skipping FQDN setup..."
 fi
+
+clear
 
 #some people are getting errors here, adding more error trapping
 if [ -d "/opt/tak/certs" ] && [ -x "/opt/tak/certs/makeRootCa.sh" ]; then
@@ -642,6 +628,8 @@ do
 	fi
 done
 
+clear
+
 #Create login credentials for local adminstrative access to the configuration interface:
 while :
 do
@@ -659,11 +647,103 @@ do
 	fi
 done
 
+clear
+
+#Do you want to create user certs now?
+read -p "Do you want to create additional connection packages for users? y or n " response
+if [[ $response =~ ^[Yy]$ ]]; then
+
+HASUSERS=1
+
+cd /opt/tak/certs/
+mkdir /opt/tak/certs/files/clients
+
+TRUSTSTORE="truststore-intermediate-CA.p12"
+TAK_COT_PORT='8089'
+
+#Make the Client Keys
+echo "How many clients do you want to configure?"
+read CLIENT_COUNT
+CLIENT_ARR=()
+for ((i=1; i<=$CLIENT_COUNT;i++))
+
+do
+    CLIENT_ARR+=($CLIENT_NAME)
+    echo ""
+    echo "************************************"
+    echo "What is the username for client #$i?"
+    echo "************************************"
+    echo ""
+    read CLIENT_NAME
+    
+    echo "Creating certs for $CLIENT_NAME"
+    cd /opt/tak/certs && ./makeCert.sh client tc-$CLIENT_NAME
+    
+    #Make a folder per user
+    mkdir /opt/tak/certs/files/clients/$CLIENT_NAME
+
+    #Copy over client certs
+    cp /opt/tak/certs/files/tc-$CLIENT_NAME.p12 /opt/tak/certs/files/clients/$CLIENT_NAME
+    #Iphone files setup
+    cp /opt/tak/certs/files/clients/$CLIENT_NAME/tc-$CLIENT_NAME.p12 /opt/tak/certs/files/clients/$CLIENT_NAME/iphone.p12
+    cp /opt/tak/certs/files/$TRUSTSTORE /opt/tak/certs/files/clients/$CLIENT_NAME
+    mv /opt/tak/certs/files/clients/$CLIENT_NAME/$TRUSTSTORE /opt/tak/certs/files/clients/$CLIENT_NAME/server.p12
+
+tee /opt/tak/certs/files/clients/$CLIENT_NAME/manifest.xml >/dev/null << EOF
+<MissionPackageManifest version="2">
+<Configuration>
+<Parameter name="uid" value="bcfaa4a5-2224-4095-bbe3-fdaa22a82741"/>
+<Parameter name="name" value="testbox_DP"/>
+<Parameter name="onReceiveDelete" value="true"/>
+</Configuration>
+<Contents>
+<Content ignore="false" zipEntry="certs\taky-server.pref"/>
+<Content ignore="false" zipEntry="certs\server.p12"/>
+<Content ignore="false" zipEntry="certs\iphone.p12"/>
+</Contents>
+</MissionPackageManifest>
+EOF
+
+
+tee /opt/tak/certs/files/clients/$CLIENT_NAME/taky-server.pref >/dev/null << EOF
+<?xml version='1.0' encoding='ASCII' standalone='yes'?>
+<preferences>
+  <preference version="1" name="cot_streams">
+    <entry key="count" class="class java.lang.Integer">1</entry>
+    <entry key="description0" class="class java.lang.String">ATAKHQ</entry>
+    <entry key="enabled0" class="class java.lang.Boolean">true</entry>
+    <entry key="connectString0" class="class java.lang.String">$IP:$TAK_COT_PORT:ssl</entry>
+  </preference>
+  <preference version="1" name="com.atakmap.app_preferences">
+    <entry key="displayServerConnectionWidget" class="class java.lang.Boolean">true</entry>
+    <entry key="caLocation" class="class java.lang.String">cert/server.p12</entry>
+    <entry key="caPassword" class="class java.lang.String">atakatak</entry>
+    <entry key="clientPassword" class="class java.lang.String">atakatak</entry>
+    <entry key="certificateLocation" class="class java.lang.String">cert/iphone.p12</entry>
+  </preference>
+</preferences>
+EOF
+
+cd /opt/tak/certs/files/clients/$CLIENT_NAME/
+zip itak.zip iphone.p12 server.p12 manifest.xml taky-server.pref
+rm iphone.p12 
+rm server.p12 
+rm manifest.xml 
+rm taky-server.pref
+done
+
+clear
+echo "Done creating client connection packages..."
+
+fi
+
 
 
 max_retries=5
 retry_interval=10 # seconds
 retry_count=0
+
+echo " ************** UPDATING CORECONFIG.XML **************"
 
 while [[ $retry_count -lt $max_retries ]]
 do
@@ -723,8 +803,8 @@ do
 	
 	if [[ $FILE_NAME == *"4.9"* ]]; then
 	#remove this new extra line in 4.9
-	line='<input _name="stdssl" protocol="tls" port="8089" coreVersion="2"/>'
-	sudo sed -i "/$line/d" /opt/tak/CoreConfig.xml
+	  line='<input _name="stdssl" protocol="tls" port="8089" coreVersion="2"/>'
+	  sudo sed -i "#${line}#d" /opt/tak/CoreConfig.xml
 	fi
 
 
@@ -770,8 +850,8 @@ sudo systemctl restart takserver
 #start the service at boot
 sudo systemctl enable takserver
 
-echo " "
-echo " "
+clear
+
 	echo "********************************************************************"
 	echo "=======================SERVER INFORMATION==========================="
 	echo "********************************************************************"
@@ -790,6 +870,12 @@ if [ "$HAS_FQDNSSL" = "1" ]; then
 	echo "********************************************************************"
 	echo "=======================CONNECTION HELP=============================="
 	echo "********************************************************************"
+	if [ "$HASUSERS" = "1" ]; then
+	echo ""
+	echo "$CLIENT_COUNT User Connection Packages Created:"
+	echo "Zip Files located in: /opt/tak/certs/files/clients"
+	echo ""
+	fi
 	echo "You should now be able to authenticate ITAK and ATAK clients using only user/password and server URL."
 	echo " "
 	echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
@@ -826,6 +912,11 @@ else
 	echo ""
 	echo "Server Address (IP): https://$IP:8446 SSL"
 	echo ""
+	if [ "$HASUSERS" = "1" ]; then
+	echo "$CLIENT_COUNT User Connection Packages Created:"
+	echo "Zip Files located in: /opt/tak/certs/files/clients"
+	echo ""
+	fi
 	echo "Create new users here: https://$IP:8446/user-management/index.html#!/"
 	echo ""
 	echo "********************************************************************"
@@ -842,6 +933,8 @@ else
 	echo "scp tak@111.222.333.444:/opt/tak/certs/files/truststore-intermediate-CA.p12 ~/Downloads"
 	echo ""
 fi
+
+#ADD-ONS BELOW
 
 
 if [ "$HAS_SIMPLERTSP" = "1" ]; then
