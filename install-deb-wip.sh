@@ -451,17 +451,19 @@ sudo chown -R tak:tak /opt/tak
 
 clear
 
-echo "*************Done installing Takserver**************"
+
 if [[ $FILE_NAME == *"4.8"* ]]; then
 
 #Setup the DB -this is now automated in 4.8 during the deb install
 sudo /opt/tak/db-utils/takserver-setup-db.sh
-  
-  
+clear
+
 fi
-
-#Need to build CoreConfig.xml and put it into /opt/tak/CoreConfig.xml so next script uses it
-
+echo "************* Done installing Takserver **************"
+echo ""
+echo "         *********** MAKING CERTS ************** "
+echo ""
+#Need to build CoreConfig.xml and put it into /opt/tak/CoreConfig.xml so next script uses it to make certs
 echo "SSL Configuration: Hit enter (x3) to accept the defaults:"
 
 read -p "State (for cert generation). Default [state] :" state
@@ -503,18 +505,11 @@ sudo systemctl daemon-reload
 
 sudo systemctl start takserver
 
+clear
+
 #wait for 30seconds so takserver can launch
 echo "Waiting 30 seconds for Tak Server to Load...."
 sleep 30
-
-#edit the service to run as tak user
-# Get the path to the service file
-#SERVICE_FILE=$(systemctl cat takserver | grep -E "^SourcePath=" | awk -F "=" '{print $2}')
-
-# Add the User directive to the service file
-#sudo sed -i "s/^\[Service\]$/&\nUser=$takuser/" "$SERVICE_FILE"
-
-#sudo systemctl daemon-reload
 
 clear
 
@@ -571,7 +566,7 @@ else
   echo "skipping FQDN setup..."
 fi
 
-
+clear
 
 #some people are getting errors here, adding more error trapping
 if [ -d "/opt/tak/certs" ] && [ -x "/opt/tak/certs/makeRootCa.sh" ]; then
@@ -633,6 +628,8 @@ do
 	fi
 done
 
+clear
+
 #Create login credentials for local adminstrative access to the configuration interface:
 while :
 do
@@ -650,6 +647,7 @@ do
 	fi
 done
 
+clear
 
 #Do you want to create user certs now?
 read -p "Do you want to create additional connection packages for users? y or n " response
@@ -660,20 +658,8 @@ HASUSERS=1
 cd /opt/tak/certs/
 mkdir /opt/tak/certs/files/clients
 
-
-
 TRUSTSTORE="truststore-intermediate-CA.p12"
-
-
-#What port does server use?
-echo "What port does your TAK server use for COT Streaming?"
-echo "(Leave blank and hit enter to use default 8089)"
-read TAK_COT_PORT
-if [ -z "${TAK_COT_PORT}" ]; then 
-    TAK_COT_PORT='8089'
-else 
-    TAK_COT_PORT=${TAK_COT_PORT}
-fi
+TAK_COT_PORT='8089'
 
 #Make the Client Keys
 echo "How many clients do you want to configure?"
@@ -756,6 +742,8 @@ fi
 max_retries=5
 retry_interval=10 # seconds
 retry_count=0
+
+echo " ************** UPDATING CORECONFIG.XML **************"
 
 while [[ $retry_count -lt $max_retries ]]
 do
@@ -862,8 +850,8 @@ sudo systemctl restart takserver
 #start the service at boot
 sudo systemctl enable takserver
 
-echo " "
-echo " "
+clear
+
 	echo "********************************************************************"
 	echo "=======================SERVER INFORMATION==========================="
 	echo "********************************************************************"
@@ -934,7 +922,6 @@ else
 	echo "********************************************************************"
 	echo "=====================CERTIFICATE INFORMATION========================"
 	echo "********************************************************************"
-	
 	echo ""
 	echo "Run the following command on your LOCAL machine to download the common cert"
 	echo ""
@@ -947,11 +934,7 @@ else
 	echo ""
 fi
 
-if [ "$HASUSERS" = "1" ]; then
-echo ""
-echo "$CLIENT_COUNT User Connection Packages Created:"
-echo "Zip Files located in: /opt/tak/certs/files/clients"
-fi
+#ADD-ONS BELOW
 
 
 if [ "$HAS_SIMPLERTSP" = "1" ]; then
