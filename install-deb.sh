@@ -906,9 +906,9 @@ if [ "$HAS_FQDNSSL" = "1" ]; then
 	echo "(There is also a copy of this image saved at /opt/tak/certs/files/itak-server-qr.png)"
 	echo ""
 	#ITAK QR Code on screen
-	echo '$HOSTNAME,$FQDN,8089,SSL' | qrencode -t UTF8
+	echo "$HOSTNAME,$FQDN,8089,SSL" | qrencode -t UTF8
 	#Save ITAK QR png to /opt/tak/certs/files
-	echo '$HOSTNAME,$FQDN,8089,SSL' | qrencode -s 10 -o /opt/tak/certs/files/itak-server-qr.png
+	echo "$HOSTNAME,$FQDN,8089,SSL" | qrencode -s 10 -o /opt/tak/certs/files/itak-server-qr.png
 else
 	echo " "
 	echo " System User tak password: $takpass                               "
