@@ -461,44 +461,6 @@ clear
 fi
 echo "************* Done installing Takserver **************"
 echo ""
-echo "         *********** MAKING CERTS ************** "
-echo ""
-#Need to build CoreConfig.xml and put it into /opt/tak/CoreConfig.xml so next script uses it to make certs
-echo "SSL Configuration: Hit enter (x3) to accept the defaults:"
-
-read -p "State (for cert generation). Default [state] :" state
-read -p "City (for cert generation). Default [city]:" city
-read -p "Organizational Unit (for cert generation). Default [org_unit]:" orgunit
-
-# define the input file path
-CERTMETAPATH="/opt/tak/certs/cert-metadata.sh"
-
-if [ -z "$state" ];
-then
-	# Default state to "STATE"
-	sed -i 's/\${STATE}/\${STATE:-STATE}/g' "$CERTMETAPATH"
-else
-	# Set new defualt from user entry
-	sed -i 's/\${STATE}/\${STATE:-$state}/g' "$CERTMETAPATH"
-fi
-
-if [ -z "$city" ];
-then
-	# Default city to "CITY"
-	sed -i 's/\${CITY}/\${CITY:-CITY}/g' "$CERTMETAPATH"
-else
-	# Set new defualt from user entry
-	sed -i 's/\${CITY}/\${CITY:-$city}/g' "$CERTMETAPATH"
-fi
-
-if [ -z "$orgunit" ];
-then
-	# Default org unit to "ORG_UNIT"
-	sed -i 's/\${ORGANIZATIONAL_UNIT}/\${ORGANIZATIONAL_UNIT:-ORG_UNIT}/g' "$CERTMETAPATH"
-else
-	# Default org unit to "ORG_UNIT"
-	sed -i 's/\${ORGANIZATIONAL_UNIT}/\${ORGANIZATIONAL_UNIT:-$orgunit}/g' "$CERTMETAPATH"
-fi
 
 
 sudo systemctl daemon-reload
@@ -568,6 +530,50 @@ fi
 
 clear
 
+#Need to build CoreConfig.xml and put it into /opt/tak/CoreConfig.xml so next script uses it to make certs
+echo "SSL Configuration: Hit enter (x3) to accept the defaults:"
+
+read -p "State (for cert generation). Default [state] :" state
+read -p "City (for cert generation). Default [city]:" city
+read -p "Organizational Unit (for cert generation). Default [org_unit]:" orgunit
+
+# define the input file path
+CERTMETAPATH="/opt/tak/certs/cert-metadata.sh"
+
+if [ -z "$state" ];
+then
+	# Default state to "STATE"
+	sed -i 's/\${STATE}/\${STATE:-STATE}/g' "$CERTMETAPATH"
+else
+	# Set new defualt from user entry
+	sed -i 's/\${STATE}/\${STATE:-$state}/g' "$CERTMETAPATH"
+fi
+
+if [ -z "$city" ];
+then
+	# Default city to "CITY"
+	sed -i 's/\${CITY}/\${CITY:-CITY}/g' "$CERTMETAPATH"
+else
+	# Set new defualt from user entry
+	sed -i 's/\${CITY}/\${CITY:-$city}/g' "$CERTMETAPATH"
+fi
+
+if [ -z "$orgunit" ];
+then
+	# Default org unit to "ORG_UNIT"
+	sed -i 's/\${ORGANIZATIONAL_UNIT}/\${ORGANIZATIONAL_UNIT:-ORG_UNIT}/g' "$CERTMETAPATH"
+else
+	# Default org unit to "ORG_UNIT"
+	sed -i 's/\${ORGANIZATIONAL_UNIT}/\${ORGANIZATIONAL_UNIT:-$orgunit}/g' "$CERTMETAPATH"
+fi
+
+# Update local env if the above file edits dont work - bunch of people reporting issues here
+export STATE=$state
+export CITY=$city
+export ORGANIZATIONAL_UNIT=$orgunit
+
+clear
+
 #some people are getting errors here, adding more error trapping
 if [ -d "/opt/tak/certs" ] && [ -x "/opt/tak/certs/makeRootCa.sh" ]; then
     echo ""
@@ -589,7 +595,7 @@ do
 	echo  "------------CERTIFICATE GENERATION--------------"
 	echo " YOU ARE LIKELY GOING TO SEE ERRORS FOR java.lang.reflect..... ignore it and let the script finish it will keep retrying until successful"
 	read -p "Press any key to continue..."
-	cd /opt/tak/certs && ./makeRootCa.sh --ca-name takserver-CA
+	cd /opt/tak/certs && sudo ./makeRootCa.sh --ca-name takserver-CA
 	if [ $? -eq 0 ];
 	then
 		clear
@@ -601,7 +607,7 @@ do
 		echo "Generating Intermediate Cert"
 		while :
 		do
-			cd /opt/tak/certs/ && ./makeCert.sh ca intermediate-CA
+			cd /opt/tak/certs/ && sudo ./makeCert.sh ca intermediate-CA
 			if [ $? -eq 0 ];
 			then
 				break
@@ -612,10 +618,10 @@ do
 		done
 
 	
-		cd /opt/tak/certs && ./makeCert.sh server takserver
+		cd /opt/tak/certs && sudo ./makeCert.sh server takserver
 		if [ $? -eq 0 ];
 		then
-			cd /opt/tak/certs && ./makeCert.sh client admin	
+			cd /opt/tak/certs && sudo ./makeCert.sh client admin	
 			if [ $? -eq 0 ];
 			then
 				break
@@ -677,7 +683,7 @@ do
     read CLIENT_NAME
     
     echo "Creating certs for $CLIENT_NAME"
-    cd /opt/tak/certs && ./makeCert.sh client tc-$CLIENT_NAME
+    cd /opt/tak/certs && sudo ./makeCert.sh client tc-$CLIENT_NAME
     
     #Make a folder per user
     mkdir /opt/tak/certs/files/clients/$CLIENT_NAME
