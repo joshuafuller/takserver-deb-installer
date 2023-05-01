@@ -44,6 +44,10 @@ Open a new SSH terminal, and fire this command to remove the apt upgrade lock - 
 
 ```sudo kill -9 XXXXXX```
 
+
+- 5/1/2023
+  - Minor changes to improve stability on some people reporting issues with cert gen step looping (added sudo to script commands and exported cert meta values if sed failed to update the config file)
+
 - 4/23/2023
   - Added support for TAK Server 4.9 (some minor changes)
   - Added prompt for additional user cert creation
