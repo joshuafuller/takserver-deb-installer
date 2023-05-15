@@ -15,7 +15,7 @@
 - Login as root user to your install target machine
 - Download and Run the install script with the command below
 
-```cd /tmp/ && git clone https://github.com/atakhq/takserver-deb-installer.git && cd ./takserver-deb-installer && sudo chmod +x install-deb.sh && ./install-deb.sh```
+```cd /tmp/ && git clone https://github.com/atakhq/takserver-deb-installer.git && cd ./takserver-deb-installer && sudo chmod +x install-deb.sh && . install-deb.sh```
 
 
 ## What the script does:
